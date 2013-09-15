@@ -4,8 +4,10 @@ public class Token {
 	// Lab 1, exercise 1: read the MiniJava specification
 	// carefully, and answer these two questions:
 	// 1. whether or not one should add other token kinds?
+	//      when we need to expand the language
 	// 2. which tokens come with an extra "lexeme", and
 	// which don't?
+	//      tokens that are not constance, like number and id
 	// It's highly recommended that these token names are
 	// alphabetically ordered, if you add new ones.
 	public enum Kind {
