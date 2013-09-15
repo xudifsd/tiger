@@ -9,7 +9,7 @@ import lexer.Token.Kind;
 public class Lexer {
 	String fname; // the input file name to be compiled
 	InputStream fstream; // input stream for the above file
-	int lineno;
+	public int lineno;
 
 	public Lexer(String fname, InputStream fstream) {
 		this.fname = fname;
