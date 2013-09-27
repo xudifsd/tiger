@@ -65,7 +65,6 @@ public class Tiger {
 		try {
 			fstream = new BufferedInputStream(new FileInputStream(fname));
 			parser = new Parser(fname, fstream);
-
 			theAst = parser.parse();
 
 			fstream.close();
