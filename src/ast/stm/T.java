@@ -1,5 +1,4 @@
 package ast.stm;
 
-public abstract class T implements ast.Acceptable
-{
+public abstract class T implements ast.Acceptable {
 }
