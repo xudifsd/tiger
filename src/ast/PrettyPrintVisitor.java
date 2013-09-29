@@ -106,7 +106,9 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(ast.exp.Not e) {
-		this.say("!");
+		this.say("!(");
+		e.exp.accept(this);
+		this.say(")");
 	}
 
 	@Override
@@ -167,9 +169,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.sayln("{");
 		this.indent();
 		for (ast.stm.T stm : s.stms) {
-			this.printSpaces();
 			stm.accept(this);
-			this.sayln("");
 		}
 		this.unIndent();
 		this.printSpaces();
@@ -224,7 +224,7 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(ast.type.Class t) {
-		this.say("class");
+		this.say(t.id);
 	}
 
 	@Override
