@@ -3,9 +3,6 @@ package parser;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
-import ast.dec.Dec;
-import ast.exp.T;
-import ast.stm.Assign;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
