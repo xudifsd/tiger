@@ -1,6 +1,7 @@
 package elaborator;
 
-import util.Todo;
+import java.util.Map;
+import java.util.Set;
 
 public class MethodTable {
 	private java.util.Hashtable<String, ast.type.T> table;
@@ -37,8 +38,12 @@ public class MethodTable {
 		return this.table.get(id);
 	}
 
-	public void dump() {
-		new Todo();
+	public void dump(String methodName) {
+		Set<Map.Entry<String, ast.type.T>> set = table.entrySet();
+		System.out.format("dump of methodT %s:\n", methodName);
+
+		for (Map.Entry<String, ast.type.T> entry: set)
+			System.out.format("\t%s %s\n", entry.getKey(), entry.getValue().toString());
 	}
 
 	@Override
