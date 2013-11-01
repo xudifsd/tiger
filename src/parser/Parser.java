@@ -144,7 +144,7 @@ public class Parser {
 	private ast.exp.T parseNotExp() {
 		ast.exp.T atomExp = parseAtomExp();
 		while (current.kind == Kind.TOKEN_DOT
-				|| current.kind == Kind.TOKEN_LBRACK) {//FIXME previous here are while
+				|| current.kind == Kind.TOKEN_LBRACK) {
 			if (current.kind == Kind.TOKEN_DOT) {
 				advance();
 				if (current.kind == Kind.TOKEN_LENGTH) {
