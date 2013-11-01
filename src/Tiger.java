@@ -54,6 +54,7 @@ public class Tiger {
 				codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
 				cAst.accept(ppc);
 				break;
+				/*
 			case Dalvik:
 				codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
 				ast.Fac.prog.accept(transDalvik);
@@ -64,6 +65,7 @@ public class Tiger {
 			case X86:
 				// similar
 				break;
+				*/
 			default:
 				break;
 			}
@@ -140,6 +142,7 @@ public class Tiger {
 			codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
 			cAst.accept(ppc);
 			break;
+			/*
 		case Dalvik:
 			codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
 			theAst.accept(transDalvik);
@@ -150,6 +153,7 @@ public class Tiger {
 		case X86:
 			// similar
 			break;
+			*/
 		default:
 			break;
 		}

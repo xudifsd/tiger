@@ -149,19 +149,6 @@ public class Parser {
 				advance();
 				if (current.kind == Kind.TOKEN_LENGTH) {
 					advance();
-					return;
-				}
-				eatToken(Kind.TOKEN_ID);
-				eatToken(Kind.TOKEN_LPAREN);
-				parseExpList();
-				eatToken(Kind.TOKEN_RPAREN);
-			} else {
-				advance();
-				parseExp();
-				eatToken(Kind.TOKEN_RBRACK);
-			}
-		}
-		return;
 					atomExp = new ast.exp.Length(atomExp);
 				} else {
 					String id = current.lexeme;
