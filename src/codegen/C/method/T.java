@@ -1,5 +1,4 @@
 package codegen.C.method;
 
-public abstract class T implements codegen.C.Acceptable
-{
+public abstract class T implements codegen.C.Acceptable {
 }
