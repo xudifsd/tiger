@@ -12,7 +12,10 @@ public class Call extends T {
 		this.exp = exp;
 		this.id = id;
 		this.args = args;
+<<<<<<< HEAD
+=======
 		this.type = null;
+>>>>>>> Lab2Solution
 	}
 
 	@Override

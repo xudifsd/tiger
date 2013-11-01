@@ -24,7 +24,11 @@ public class Fac {
 
 	// // class "Fac"
 	static ast.classs.Class fac = new ast.classs.Class(
+<<<<<<< HEAD
 			"Fac",
+=======
+			"F",
+>>>>>>> Lab2Solution
 			null,
 			new util.Flist<ast.dec.T>().addAll(),
 			new util.Flist<ast.method.T>().addAll(new ast.method.Method(
@@ -34,6 +38,27 @@ public class Fac {
 							new ast.type.Int(), "num")),
 					new util.Flist<ast.dec.T>().addAll(new ast.dec.Dec(
 							new ast.type.Int(), "num_aux")),
+<<<<<<< HEAD
+					new util.Flist<ast.stm.T>()
+							.addAll(new ast.stm.If(
+									new ast.exp.Lt(new ast.exp.Id("num"),
+											new ast.exp.Num(1)),
+									new ast.stm.Assign("num_aux",
+											new ast.exp.Num(1)),
+									new ast.stm.Assign(
+											"num_aux",
+											new ast.exp.Times(
+													new ast.exp.Id("num"),
+													new ast.exp.Call(
+															new ast.exp.This(),
+															"ComputeFac",
+															new util.Flist<ast.exp.T>()
+																	.addAll(new ast.exp.Sub(
+																			new ast.exp.Id(
+																					"num"),
+																			new ast.exp.Num(
+																					1)))))))),
+=======
 					new util.Flist<ast.stm.T>().addAll(new ast.stm.If(
 							new ast.exp.Lt(new ast.exp.Id("num"),
 									new ast.exp.Num(1)),
@@ -59,6 +84,7 @@ public class Fac {
 																			"num"),
 																	new ast.exp.Num(
 																			1)))))))),
+>>>>>>> Lab2Solution
 					new ast.exp.Id("num_aux"))));
 
 	// program
@@ -69,6 +95,8 @@ public class Fac {
 	// represent the program "test/Sum.java".
 	// Your code here:
 
+<<<<<<< HEAD
+=======
 	// // main class: "Sum"
 	static ast.mainClass.MainClass sum = new ast.mainClass.MainClass("Sum",
 			"a", new ast.stm.Print(new ast.exp.Call(new ast.exp.NewObject(
@@ -98,4 +126,5 @@ public class Fac {
 	// program
 	public static ast.program.Program prog1 = new ast.program.Program(sum,
 			new util.Flist<ast.classs.T>().addAll(doit));
+>>>>>>> Lab2Solution
 }

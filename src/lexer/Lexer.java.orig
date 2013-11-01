@@ -1,6 +1,9 @@
 package lexer;
 
+<<<<<<< HEAD
+=======
 import java.io.IOException;
+>>>>>>> Lab2Solution
 import java.io.InputStream;
 
 import util.Todo;
@@ -10,12 +13,18 @@ import lexer.Token.Kind;
 public class Lexer {
 	String fname; // the input file name to be compiled
 	InputStream fstream; // input stream for the above file
+<<<<<<< HEAD
+=======
 	public int lineno;
+>>>>>>> Lab2Solution
 
 	public Lexer(String fname, InputStream fstream) {
 		this.fname = fname;
 		this.fstream = fstream;
+<<<<<<< HEAD
+=======
 		this.lineno = 1;
+>>>>>>> Lab2Solution
 	}
 
 	// When called, return the next token (refer to the code "Token.java")
@@ -27,6 +36,31 @@ public class Lexer {
 			// The value for "lineNum" is now "null",
 			// you should modify this to an appropriate
 			// line number for the "EOF" token.
+<<<<<<< HEAD
+			return new Token(Kind.TOKEN_EOF, null);
+
+		// skip all kinds of "blanks"
+		while (' ' == c || '\t' == c || '\n' == c) {
+			c = this.fstream.read();
+		}
+		if (-1 == c)
+			return new Token(Kind.TOKEN_EOF, null);
+
+		switch (c) {
+		case '+':
+			return new Token(Kind.TOKEN_ADD, null);
+		default:
+			// Lab 1, exercise 2: supply missing code to
+			// lex other kinds of tokens.
+			// Hint: think carefully about the basic
+			// data structure and algorithms. The code
+			// is not that much and may be less than 50 lines. If you
+			// find you are writing a lot of code, you
+			// are on the wrong way.
+			new Todo();
+			return null;
+		}
+=======
 			return new Token(Kind.TOKEN_EOF, this.lineno);
 
 		// skip all kinds of "blanks"
@@ -238,6 +272,7 @@ public class Lexer {
 	private void bug() {
 		System.err.format("in file %s, lineno %d, there are a bug", this.fname,
 				this.lineno);
+>>>>>>> Lab2Solution
 	}
 
 	public Token nextToken() {

@@ -7,7 +7,10 @@ import lexer.Token;
 import lexer.Token.Kind;
 
 import control.CommandLine;
+<<<<<<< HEAD
 import control.Control;
+=======
+>>>>>>> Lab2Solution
 
 import parser.Parser;
 
@@ -24,8 +27,10 @@ public class Tiger {
 		// /////////////////////////////////////////////////////
 		// to test the pretty printer on the "test/Fac.java" program
 		if (control.Control.testFac) {
-			System.out.println("Testing the Tiger compiler on Fac.java starting:");
+			System.out
+					.println("Testing the Tiger compiler on Fac.java starting:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
+<<<<<<< HEAD
 			ast.Fac.prog.accept(pp);
 
 			// elaborate the given program, this step is necessary
@@ -67,7 +72,11 @@ public class Tiger {
 			default:
 				break;
 			}
-			System.out.println("Testing the Tiger compiler on Fac.java finished.");
+=======
+			ast.Fac.prog1.accept(pp);
+>>>>>>> Lab2Solution
+			System.out
+					.println("Testing the Tiger compiler on Fac.java finished.");
 			System.exit(1);
 		}
 
@@ -75,7 +84,10 @@ public class Tiger {
 			cmd.usage();
 			return;
 		}
+<<<<<<< HEAD
 		Control.fileName = fname;
+=======
+>>>>>>> Lab2Solution
 
 		// /////////////////////////////////////////////////////
 		// it would be helpful to be able to test the lexer
@@ -105,7 +117,10 @@ public class Tiger {
 		try {
 			fstream = new BufferedInputStream(new FileInputStream(fname));
 			parser = new Parser(fname, fstream);
+<<<<<<< HEAD
 
+=======
+>>>>>>> Lab2Solution
 			theAst = parser.parse();
 
 			fstream.close();
@@ -124,6 +139,7 @@ public class Tiger {
 		elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
 		theAst.accept(elab);
 
+<<<<<<< HEAD
 		// code generation
 		switch (control.Control.codegen) {
 		case Bytecode:
@@ -159,6 +175,9 @@ public class Tiger {
 		// file, or call java to run the bytecode file,
 		// or dalvik to run the dalvik bytecode.
 		// Your code here:
+
+=======
+>>>>>>> Lab2Solution
 		return;
 	}
 }
