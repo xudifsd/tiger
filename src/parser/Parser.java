@@ -111,7 +111,7 @@ public class Parser {
 			result = new ast.exp.Id(current.lexeme);
 			advance();
 			return result;
-		case TOKEN_NEW: {
+		case TOKEN_NEW:
 			advance();
 			switch (current.kind) {
 			case TOKEN_INT:
@@ -130,7 +130,6 @@ public class Parser {
 				error("in parseAtomExp, TOKEN_NEW case");
 				return null;
 			}
-		}
 		default:
 			error("in parseAtomExp, default case");
 			return null;
@@ -240,7 +239,7 @@ public class Parser {
 	// -> while ( Exp ) Statement
 	// -> System.out.println ( Exp ) ;
 	// -> id = Exp ;
-	// -> id [ Exp ]= Exp ;
+	// -> id [ Exp ] = Exp ;
 	private ast.stm.T parseStatement() {
 		switch (current.kind) {
 		case TOKEN_LBRACE:

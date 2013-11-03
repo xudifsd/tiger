@@ -70,7 +70,7 @@ public class Tiger {
 				break;
 			}
 			System.out.println("Testing the Tiger compiler on Fac.java finished.");
-			System.exit(1);
+			System.exit(0);
 		}
 
 		if (fname == null) {
