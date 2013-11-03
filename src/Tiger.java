@@ -5,10 +5,8 @@ import java.io.InputStream;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
-
 import control.CommandLine;
 import control.Control;
-
 import parser.Parser;
 
 public class Tiger {
@@ -158,6 +156,29 @@ public class Tiger {
 			break;
 		}
 
+		if (Control.auto) {
+			switch (control.Control.codegen) {
+			case Bytecode:
+				break;
+			case C:
+				try {
+					Process p = Runtime.getRuntime().exec(
+						"gcc " + Control.outputName + " ../runtime/runtime.c " +
+						"-I ../runtime/");
+					p.waitFor();
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.exit(2);
+				}
+				break;
+			case Dalvik:
+				break;
+			case X86:
+				break;
+			default:
+				break;
+			}
+		}
 		// Lab3, exercise 6: add some glue code to
 		// call gcc to compile the generated C or x86
 		// file, or call java to run the bytecode file,

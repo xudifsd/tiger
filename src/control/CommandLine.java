@@ -125,6 +125,14 @@ public class CommandLine {
 						Control.testlexer = true;
 						return;
 					}
+				}), new Arg<Object>("auto", null,
+				"whether or not generate runnable file directly", Kind.Empty,
+				new F<Object>() {
+					@Override
+					public void f(Object s) {
+						Control.auto = true;
+						return;
+					}
 				}));
 	}
 
