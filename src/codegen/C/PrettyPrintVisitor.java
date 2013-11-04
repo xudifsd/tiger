@@ -347,11 +347,18 @@ public class PrettyPrintVisitor implements Visitor {
 			String outputName = null;
 			if (Control.outputName != null)
 				outputName = Control.outputName;
-			else if (Control.fileName != null)
-				Control.outputName = outputName = Control.fileName + ".c";
-			else
-				Control.outputName = outputName = "a.c";
+			else if (Control.fileName != null) {
+				int index = Control.fileName.indexOf("/");
+				String tmp = Control.fileName;
+				while (index != -1) {
+					tmp = tmp.substring(index + 1);
+					index = tmp.indexOf("/");
+				}
+				Control.outputName = outputName = "/tmp/" + tmp + ".c";
+			} else
+				Control.outputName = outputName = "/tmp/" + "a.c";
 
+			System.out.format("write output file to %s\n", Control.outputName);
 			this.writer = new java.io.BufferedWriter(
 					new java.io.OutputStreamWriter(
 							new java.io.FileOutputStream(outputName)));

@@ -166,6 +166,15 @@ public class Tiger {
 						"gcc " + Control.outputName + " ../runtime/runtime.c " +
 						"-I ../runtime/");
 					p.waitFor();
+					if (p.exitValue() != 0) {
+						byte[] buffer = new byte[1024];
+						int num = p.getErrorStream().read(buffer);
+						while (num != -1) {
+							System.err.write(buffer, 0, num);
+							num = p.getErrorStream().read(buffer);
+						}
+						System.exit(p.exitValue());
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 					System.exit(2);
