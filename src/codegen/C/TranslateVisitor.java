@@ -91,7 +91,7 @@ public class TranslateVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(ast.exp.Id e) {
-		this.exp = new codegen.C.exp.Id(e.id);
+		this.exp = new codegen.C.exp.Id(e.id, e.isField);
 	}
 
 	@Override
@@ -166,7 +166,7 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.stm.Assign s) {
 		s.exp.accept(this);
-		this.stm = new codegen.C.stm.Assign(s.id, this.exp);
+		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField);
 	}
 
 	@Override
@@ -175,7 +175,7 @@ public class TranslateVisitor implements ast.Visitor {
 		codegen.C.exp.T index = this.exp;
 		s.exp.accept(this);
 		codegen.C.exp.T exp = this.exp;
-		this.stm = new codegen.C.stm.AssignArray(s.id, index, exp);
+		this.stm = new codegen.C.stm.AssignArray(s.id, index, exp, s.isField);
 	}
 
 	@Override

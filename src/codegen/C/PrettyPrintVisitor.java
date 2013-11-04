@@ -48,16 +48,20 @@ public class PrettyPrintVisitor implements Visitor {
 	// expressions
 	@Override
 	public void visit(codegen.C.exp.Add e) {
+		this.say("(");
 		e.left.accept(this);
 		this.say(" + ");
 		e.right.accept(this);
+		this.say(")");
 	}
 
 	@Override
 	public void visit(codegen.C.exp.And e) {
+		this.say("(");
 		e.left.accept(this);
 		this.say(" && ");
 		e.right.accept(this);
+		this.say(")");
 	}
 
 	@Override
@@ -88,6 +92,8 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Id e) {
+		if (e.isField)
+			this.say("this->");
 		this.say(e.id);
 	}
 
@@ -100,9 +106,11 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Lt e) {
+		this.say("(");
 		e.left.accept(this);
 		this.say(" < ");
 		e.right.accept(this);
+		this.say(")");
 	}
 
 	@Override
@@ -121,7 +129,9 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(codegen.C.exp.Not e) {
 		this.say("!");
+		this.say("(");
 		e.exp.accept(this);
+		this.say(")");
 	}
 
 	@Override
@@ -131,9 +141,11 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Sub e) {
+		this.say("(");
 		e.left.accept(this);
 		this.say(" - ");
 		e.right.accept(this);
+		this.say(")");
 	}
 
 	@Override
@@ -143,14 +155,18 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Times e) {
+		this.say("(");
 		e.left.accept(this);
 		this.say(" * ");
 		e.right.accept(this);
+		this.say(")");
 	}
 
 	// statements
 	@Override
 	public void visit(codegen.C.stm.Assign s) {
+		if (s.isField)
+			this.say("this->");
 		this.say(s.id + " = ");
 		s.exp.accept(this);
 		this.sayln(";");
@@ -158,6 +174,8 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.stm.AssignArray s) {
+		if (s.isField)
+			this.say("this->");
 		this.say(s.id + "->data[");
 		s.index.accept(this);
 		this.say("] = ");
@@ -382,15 +400,39 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.sayln("");
 
-		this.sayln("\n// methods");
-		for (codegen.C.method.T m : p.methods) {
-			m.accept(this);
+		this.sayln("\n// declarations");
+		for (codegen.C.method.T generalM: p.methods) {
+			if (generalM instanceof codegen.C.method.Method) {
+				codegen.C.method.Method m = (codegen.C.method.Method)generalM;
+				m.retType.accept(this);
+				this.say(" " + m.classId + "_" + m.id + "(");
+				int size = m.formals.size();
+				for (codegen.C.dec.T d : m.formals) {
+					codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
+					size--;
+					dec.type.accept(this);
+					this.say(" " + dec.id);
+					if (size > 0)
+						this.say(", ");
+				}
+				this.sayln(");");
+			} else {
+				/* couldn't happen */
+				System.err.println("fatal error, method is not of codegen.C.method.Method class");
+				System.exit(3);
+			}
 		}
 		this.sayln("");
 
 		this.sayln("\n// vtables");
 		for (codegen.C.vtable.T v : p.vtables) {
 			outputVtable((codegen.C.vtable.Vtable) v);
+		}
+		this.sayln("");
+
+		this.sayln("\n// methods");
+		for (codegen.C.method.T m : p.methods) {
+			m.accept(this);
 		}
 		this.sayln("");
 

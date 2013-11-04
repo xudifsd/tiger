@@ -206,9 +206,11 @@ public class ElaboratorVisitor implements ast.Visitor {
 	public void visit(ast.stm.Assign s) {
 		// first look up the id in method table
 		ast.type.T type = this.methodTable.get(s.id);
-		// if search failed, then s.id must
-		if (type == null)
+		// if search failed, then s.id must a class field.
+		if (type == null) {
 			type = this.classTable.get(this.currentClass, s.id);
+			s.isField = true;
+		}
 		if (type == null)
 			error("in Assign, unknow " + s.id);
 		s.type = type;
@@ -220,8 +222,10 @@ public class ElaboratorVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.stm.AssignArray s) {
 		ast.type.T type = this.methodTable.get(s.id);
-		if (type == null)
+		if (type == null) {
 			type = this.classTable.get(this.currentClass, s.id);
+			s.isField = true;
+		}
 		if (type == null)
 			error("in AssignArray, unknow int array");
 		if (!type.toString().equals("@int[]"))
