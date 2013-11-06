@@ -28,7 +28,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 		e.right.accept(this);
 		if (!this.type.toString().equals("@int"))
 			error("in Add, type of right hand is not int");
-		this.type = new ast.type.Int();
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 		e.right.accept(this);
 		if (!this.type.toString().equals("@boolean"))
 			error("in And, type of right hand is not boolean");
-		this.type = new ast.type.Boolean();
+		this.type = new ast.type.Boolean(-1);
 	}
 
 	@Override
@@ -50,7 +50,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 		e.index.accept(this);
 		if (!this.type.toString().equals("@int"))
 			error("in ArraySelect, type of index is not int");
-		this.type = new ast.type.Int();
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
@@ -71,6 +71,8 @@ public class ElaboratorVisitor implements ast.Visitor {
 			a.accept(this);
 			argsty.addLast(this.type);
 		}
+		if (mty == null)
+			error("in Call, not found method of " + ty.id + "." + e.id);
 		if (mty.argsType.size() != argsty.size())
 			error("in Call, argument list length is not match parpameter list length");
 		for (int i = 0; i < argsty.size(); i++) {
@@ -104,7 +106,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(ast.exp.False e) {
-		this.type = new ast.type.Boolean();
+		this.type = new ast.type.Boolean(-1);
 	}
 
 	@Override
@@ -130,7 +132,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 		e.array.accept(this);
 		if (!this.type.toString().equals("@int[]"))
 			error("access length property when exp is not int[]");
-		this.type = new ast.type.Int();
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
@@ -141,17 +143,20 @@ public class ElaboratorVisitor implements ast.Visitor {
 		if (!(this.type.toString().equals(ty.toString()) &&
 				this.type.toString().equals("@int")))
 			error("left and right of < should both be of type int");
-		this.type = new ast.type.Boolean();
+		this.type = new ast.type.Boolean(-1);
 	}
 
 	@Override
 	public void visit(ast.exp.NewIntArray e) {
-		this.type = new ast.type.IntArray();
+		e.exp.accept(this);
+		if (!this.type.toString().equals("@int"))
+			error("line " + e.lineno + " sematic error, size of new array is not int");
+		this.type = new ast.type.IntArray(-1);
 	}
 
 	@Override
 	public void visit(ast.exp.NewObject e) {
-		this.type = new ast.type.Class(e.id);
+		this.type = new ast.type.Class(e.id, -1);
 	}
 
 	@Override
@@ -159,12 +164,12 @@ public class ElaboratorVisitor implements ast.Visitor {
 		e.exp.accept(this);
 		if (!this.type.toString().equals("@boolean"))
 			error("! operator only accept boolean");
-		this.type = new ast.type.Boolean();
+		this.type = new ast.type.Boolean(-1);
 	}
 
 	@Override
 	public void visit(ast.exp.Num e) {
-		this.type = new ast.type.Int();
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
@@ -175,13 +180,12 @@ public class ElaboratorVisitor implements ast.Visitor {
 		if (!(this.type.toString().equals(leftty.toString()) &&
 				this.type.toString().equals("@int")))
 			error("left and right of - should both be of type int");
-		this.type = new ast.type.Int();
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
 	public void visit(ast.exp.This e) {
-		this.type = new ast.type.Class(this.currentClass);
-		return;
+		this.type = new ast.type.Class(this.currentClass, -1);
 	}
 
 	@Override
@@ -192,13 +196,12 @@ public class ElaboratorVisitor implements ast.Visitor {
 		if (!(this.type.toString().equals(leftty.toString()) &&
 				this.type.toString().equals("@int")))
 			error("left and right of * should both be of type int");
-		this.type = new ast.type.Int();
-		return;
+		this.type = new ast.type.Int(-1);
 	}
 
 	@Override
 	public void visit(ast.exp.True e) {
-		this.type = new ast.type.Boolean();
+		this.type = new ast.type.Boolean(-1);
 	}
 
 	// statements
@@ -215,6 +218,7 @@ public class ElaboratorVisitor implements ast.Visitor {
 			error("in Assign, unknow " + s.id);
 		s.type = type;
 		s.exp.accept(this);
+		// FIXME couldn't handle extends right now
 		if (!this.type.toString().equals(s.type.toString()))
 			error("trying to assign " + this.type + " to " + s.type);
 	}

@@ -17,6 +17,8 @@ public class TranslateVisitor implements ast.Visitor {
 	private codegen.bytecode.method.T method;
 	private codegen.bytecode.classs.T classs;
 	private codegen.bytecode.mainClass.T mainClass;
+	private boolean inAssign;
+	private LinkedList<codegen.bytecode.stm.T> assignList;
 	public codegen.bytecode.program.T program;
 
 	public TranslateVisitor() {
@@ -29,24 +31,50 @@ public class TranslateVisitor implements ast.Visitor {
 		this.classs = null;
 		this.mainClass = null;
 		this.program = null;
+		this.inAssign = false;
+		this.assignList = null;
 	}
 
 	private void emit(codegen.bytecode.stm.T s) {
-		this.stms.add(s);
+		if (this.inAssign)
+			this.assignList.add(s);
+		else
+			this.stms.add(s);
 	}
 
 	// /////////////////////////////////////////////////////
 	// expressions
 	@Override
 	public void visit(ast.exp.Add e) {
+		e.left.accept(this);
+		e.right.accept(this);
+		emit(new codegen.bytecode.stm.Iadd());
 	}
 
 	@Override
 	public void visit(ast.exp.And e) {
+		Label left = new Label(), right = new Label(), out = new Label();
+		e.left.accept(this);
+		emit(new codegen.bytecode.stm.Ifne(left));
+		emit(new codegen.bytecode.stm.Ldc(0));
+		emit(new codegen.bytecode.stm.Goto(out));
+
+		emit(new codegen.bytecode.stm.Label(left));
+		e.right.accept(this);
+		emit(new codegen.bytecode.stm.Ifne(right));
+		emit(new codegen.bytecode.stm.Ldc(0));
+		emit(new codegen.bytecode.stm.Goto(out));
+
+		emit(new codegen.bytecode.stm.Label(right));
+		emit(new codegen.bytecode.stm.Ldc(1));
+		emit(new codegen.bytecode.stm.Label(out));
 	}
 
 	@Override
 	public void visit(ast.exp.ArraySelect e) {
+		e.array.accept(this);
+		e.index.accept(this);
+		emit(new codegen.bytecode.stm.Iaload());
 	}
 
 	@Override
@@ -62,28 +90,35 @@ public class TranslateVisitor implements ast.Visitor {
 			t.accept(this);
 			at.add(this.type);
 		}
+		// FIXME the at is not right, we should generate declaration type instead of runtime type
 		emit(new codegen.bytecode.stm.Invokevirtual(e.id, e.type, at, rt));
-		return;
 	}
 
 	@Override
 	public void visit(ast.exp.False e) {
+		emit(new codegen.bytecode.stm.Ldc(0));
 	}
 
 	@Override
 	public void visit(ast.exp.Id e) {
-		int index = this.indexTable.get(e.id);
-		ast.type.T type = e.type;
-		if (type.getNum() > 0)// a reference
-			emit(new codegen.bytecode.stm.Aload(index));
-		else
-			emit(new codegen.bytecode.stm.Iload(index));
-		// but what about this is a field?
-		return;
+		if (e.isField) {
+			e.type.accept(this);
+			codegen.bytecode.type.T type = this.type;
+			emit(new codegen.bytecode.stm.Getfield(this.classId, e.id, type));
+		} else {
+			int index = this.indexTable.get(e.id);
+			ast.type.T type = e.type;
+			if (type.getNum() > 0)// a reference
+				emit(new codegen.bytecode.stm.Aload(index));
+			else
+				emit(new codegen.bytecode.stm.Iload(index));
+		}
 	}
 
 	@Override
 	public void visit(ast.exp.Length e) {
+		e.array.accept(this);
+		emit(new codegen.bytecode.stm.Arraylength());
 	}
 
 	@Override
@@ -99,27 +134,35 @@ public class TranslateVisitor implements ast.Visitor {
 		emit(new codegen.bytecode.stm.Ldc(1));
 		emit(new codegen.bytecode.stm.Goto(el));
 		emit(new codegen.bytecode.stm.Label(el));
-		return;
 	}
 
 	@Override
 	public void visit(ast.exp.NewIntArray e) {
+		e.exp.accept(this);
+		emit(new codegen.bytecode.stm.NewarrayInt());
 	}
 
 	@Override
 	public void visit(ast.exp.NewObject e) {
 		emit(new codegen.bytecode.stm.New(e.id));
-		return;
 	}
 
 	@Override
 	public void visit(ast.exp.Not e) {
+		Label generate_0 = new Label(), out = new Label();
+		e.exp.accept(this);
+		emit(new codegen.bytecode.stm.Ifne(generate_0));
+		emit(new codegen.bytecode.stm.Ldc(1));
+		emit(new codegen.bytecode.stm.Goto(out));
+
+		emit(new codegen.bytecode.stm.Label(generate_0));
+		emit(new codegen.bytecode.stm.Ldc(0));
+		emit(new codegen.bytecode.stm.Label(out));
 	}
 
 	@Override
 	public void visit(ast.exp.Num e) {
 		emit(new codegen.bytecode.stm.Ldc(e.num));
-		return;
 	}
 
 	@Override
@@ -127,13 +170,11 @@ public class TranslateVisitor implements ast.Visitor {
 		e.left.accept(this);
 		e.right.accept(this);
 		emit(new codegen.bytecode.stm.Isub());
-		return;
 	}
 
 	@Override
 	public void visit(ast.exp.This e) {
 		emit(new codegen.bytecode.stm.Aload(0));
-		return;
 	}
 
 	@Override
@@ -141,33 +182,53 @@ public class TranslateVisitor implements ast.Visitor {
 		e.left.accept(this);
 		e.right.accept(this);
 		emit(new codegen.bytecode.stm.Imul());
-		return;
 	}
 
 	@Override
 	public void visit(ast.exp.True e) {
+		emit(new codegen.bytecode.stm.Ldc(1));
 	}
 
 	// statements
 	@Override
 	public void visit(ast.stm.Assign s) {
-		s.exp.accept(this);
-		int index = this.indexTable.get(s.id);
-		ast.type.T type = s.type;
-		if (type.getNum() > 0)
-			emit(new codegen.bytecode.stm.Astore(index));
-		else
-			emit(new codegen.bytecode.stm.Istore(index));
-
-		return;
+		if (s.isField) {
+			this.inAssign = true;//capture all emitted stm
+			this.assignList = new LinkedList<codegen.bytecode.stm.T>();
+			s.exp.accept(this);
+			s.type.accept(this);
+			codegen.bytecode.type.T type = this.type;
+			this.inAssign = false;
+			emit(new codegen.bytecode.stm.Putfield(this.classId, s.id, type, this.assignList));
+			this.assignList = null;
+		} else {
+			s.exp.accept(this);
+			int index = this.indexTable.get(s.id);
+			ast.type.T type = s.type;
+			if (type.getNum() > 0)// a reference
+				emit(new codegen.bytecode.stm.Astore(index));
+			else
+				emit(new codegen.bytecode.stm.Istore(index));
+		}
 	}
 
 	@Override
 	public void visit(ast.stm.AssignArray s) {
+		if (s.isField) {
+			emit(new codegen.bytecode.stm.Getfield(this.classId, s.id, new codegen.bytecode.type.IntArray()));
+		} else {
+			int index = this.indexTable.get(s.id);
+			emit(new codegen.bytecode.stm.Aload(index));
+		}
+		s.index.accept(this);
+		s.exp.accept(this);
+		emit(new codegen.bytecode.stm.Iastore());
 	}
 
 	@Override
 	public void visit(ast.stm.Block s) {
+		for (ast.stm.T stm: s.stms)
+			stm.accept(this);
 	}
 
 	@Override
@@ -182,27 +243,36 @@ public class TranslateVisitor implements ast.Visitor {
 		s.thenn.accept(this);
 		emit(new codegen.bytecode.stm.Goto(el));
 		emit(new codegen.bytecode.stm.Label(el));
-		return;
 	}
 
 	@Override
 	public void visit(ast.stm.Print s) {
 		s.exp.accept(this);
 		emit(new codegen.bytecode.stm.Print());
-		return;
 	}
 
 	@Override
 	public void visit(ast.stm.While s) {
+		Label body = new Label(), out = new Label(), start = new Label();
+		emit(new codegen.bytecode.stm.Label(start));
+		s.condition.accept(this);
+		emit(new codegen.bytecode.stm.Ifne(body));
+		emit(new codegen.bytecode.stm.Goto(out));
+		emit(new codegen.bytecode.stm.Label(body));
+		s.body.accept(this);
+		emit(new codegen.bytecode.stm.Goto(start));
+		emit(new codegen.bytecode.stm.Label(out));
 	}
 
 	// type
 	@Override
 	public void visit(ast.type.Boolean t) {
+		this.type = new codegen.bytecode.type.Int();
 	}
 
 	@Override
 	public void visit(ast.type.Class t) {
+		this.type = new codegen.bytecode.type.Class(t.id);
 	}
 
 	@Override
@@ -212,6 +282,7 @@ public class TranslateVisitor implements ast.Visitor {
 
 	@Override
 	public void visit(ast.type.IntArray t) {
+		this.type = new codegen.bytecode.type.IntArray();
 	}
 
 	// dec
@@ -219,8 +290,8 @@ public class TranslateVisitor implements ast.Visitor {
 	public void visit(ast.dec.Dec d) {
 		d.type.accept(this);
 		this.dec = new codegen.bytecode.dec.Dec(this.type, d.id);
-		this.indexTable.put(d.id, index++);
-		return;
+		if (this.indexTable != null)
+			this.indexTable.put(d.id, index++);
 	}
 
 	// method
@@ -258,8 +329,6 @@ public class TranslateVisitor implements ast.Visitor {
 
 		this.method = new codegen.bytecode.method.Method(newRetType, m.id,
 				this.classId, newFormals, locals, this.stms, 0, this.index);
-
-		return;
 	}
 
 	// class
@@ -267,6 +336,7 @@ public class TranslateVisitor implements ast.Visitor {
 	public void visit(ast.classs.Class c) {
 		this.classId = c.id;
 		java.util.LinkedList<codegen.bytecode.dec.T> newDecs = new java.util.LinkedList<codegen.bytecode.dec.T>();
+		this.indexTable = null;
 		for (ast.dec.T dec : c.decs) {
 			dec.accept(this);
 			newDecs.add(this.dec);
@@ -278,7 +348,6 @@ public class TranslateVisitor implements ast.Visitor {
 		}
 		this.classs = new codegen.bytecode.classs.Class(c.id, c.extendss,
 				newDecs, newMethods);
-		return;
 	}
 
 	// main class
@@ -288,7 +357,6 @@ public class TranslateVisitor implements ast.Visitor {
 		this.mainClass = new codegen.bytecode.mainClass.MainClass(c.id, c.arg,
 				this.stms);
 		this.stms = new java.util.LinkedList<codegen.bytecode.stm.T>();
-		return;
 	}
 
 	// program
@@ -304,6 +372,5 @@ public class TranslateVisitor implements ast.Visitor {
 		}
 		this.program = new codegen.bytecode.program.Program(this.mainClass,
 				newClasses);
-		return;
 	}
 }

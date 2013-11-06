@@ -1,7 +1,10 @@
 package ast.exp;
 
 public class True extends T {
-	public True() {
+	public int lineno;
+
+	public True(int lineno) {
+		this.lineno = lineno;
 	}
 
 	@Override

@@ -95,20 +95,20 @@ public class Parser {
 			eatToken(Kind.TOKEN_RPAREN);
 			return result;
 		case TOKEN_NUM:
-			result = new ast.exp.Num(Integer.valueOf(current.lexeme));
+			result = new ast.exp.Num(Integer.valueOf(current.lexeme), lexer.lineno);
 			advance();
 			return result;
 		case TOKEN_TRUE:
 			advance();
-			return new ast.exp.True();
+			return new ast.exp.True(lexer.lineno);
 		case TOKEN_FALSE:
 			advance();
-			return new ast.exp.False();
+			return new ast.exp.False(lexer.lineno);
 		case TOKEN_THIS:
 			advance();
-			return new ast.exp.This();
+			return new ast.exp.This(lexer.lineno);
 		case TOKEN_ID:
-			result = new ast.exp.Id(current.lexeme);
+			result = new ast.exp.Id(current.lexeme, lexer.lineno);
 			advance();
 			return result;
 		case TOKEN_NEW:
@@ -119,9 +119,9 @@ public class Parser {
 				eatToken(Kind.TOKEN_LBRACK);
 				result = parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
-				return new ast.exp.NewIntArray(result);
+				return new ast.exp.NewIntArray(result, lexer.lineno);
 			case TOKEN_ID:
-				result = new ast.exp.NewObject(current.lexeme);
+				result = new ast.exp.NewObject(current.lexeme, lexer.lineno);
 				advance();
 				eatToken(Kind.TOKEN_LPAREN);
 				eatToken(Kind.TOKEN_RPAREN);
@@ -148,21 +148,21 @@ public class Parser {
 				advance();
 				if (current.kind == Kind.TOKEN_LENGTH) {
 					advance();
-					atomExp = new ast.exp.Length(atomExp);
+					atomExp = new ast.exp.Length(atomExp, lexer.lineno);
 				} else {
 					String id = current.lexeme;
 					eatToken(Kind.TOKEN_ID);
 					eatToken(Kind.TOKEN_LPAREN);
 					LinkedList<ast.exp.T> expList = parseExpList();
 					eatToken(Kind.TOKEN_RPAREN);
-					atomExp = new ast.exp.Call(atomExp, id, expList);
+					atomExp = new ast.exp.Call(atomExp, id, expList, lexer.lineno);
 				}
 			} else {
 				// must be TOKEN_LBRACK
 				advance();
 				ast.exp.T exp = parseExp();
 				eatToken(Kind.TOKEN_RBRACK);
-				atomExp =  new ast.exp.ArraySelect(atomExp, exp);
+				atomExp =  new ast.exp.ArraySelect(atomExp, exp, lexer.lineno);
 			}
 		}
 		return atomExp;
@@ -179,7 +179,7 @@ public class Parser {
 		}
 		ast.exp.T notExp = parseNotExp();
 		for (int i = 0; i < nest; i++)
-			notExp = new ast.exp.Not(notExp);
+			notExp = new ast.exp.Not(notExp, lexer.lineno);
 		return notExp;
 	}
 
@@ -189,7 +189,7 @@ public class Parser {
 		ast.exp.T timesExp = parseTimesExp();
 		while (current.kind == Kind.TOKEN_TIMES) {
 			advance();
-			timesExp = new ast.exp.Times(timesExp, parseTimesExp());
+			timesExp = new ast.exp.Times(timesExp, parseTimesExp(), lexer.lineno);
 		}
 		return timesExp;
 	}
@@ -202,11 +202,11 @@ public class Parser {
 		while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
 			if (current.kind == Kind.TOKEN_ADD) {
 				advance();
-				addSubExp = new ast.exp.Add(addSubExp, parseAddSubExp());
+				addSubExp = new ast.exp.Add(addSubExp, parseAddSubExp(), lexer.lineno);
 			} else {
 				//must Kind.TOKEN_SUB
 				advance();
-				addSubExp = new ast.exp.Sub(addSubExp, parseAddSubExp());
+				addSubExp = new ast.exp.Sub(addSubExp, parseAddSubExp(), lexer.lineno);
 			}
 		}
 		return addSubExp;
@@ -218,7 +218,7 @@ public class Parser {
 		ast.exp.T ltExp = parseLtExp();;
 		while (current.kind == Kind.TOKEN_LT) {
 			advance();
-			ltExp = new ast.exp.Lt(ltExp, parseLtExp());
+			ltExp = new ast.exp.Lt(ltExp, parseLtExp(), lexer.lineno);
 		}
 		return ltExp;
 	}
@@ -229,7 +229,7 @@ public class Parser {
 		ast.exp.T andExp = parseAndExp();
 		while (current.kind == Kind.TOKEN_AND) {
 			advance();
-			andExp = new ast.exp.And(andExp, parseAndExp());
+			andExp = new ast.exp.And(andExp, parseAndExp(), lexer.lineno);
 		}
 		return andExp;
 	}
@@ -246,7 +246,7 @@ public class Parser {
 			advance();
 			LinkedList<ast.stm.T> statements = parseStatements();
 			eatToken(Kind.TOKEN_RBRACE);
-			return new ast.stm.Block(statements);
+			return new ast.stm.Block(statements, lexer.lineno);
 		case TOKEN_IF:
 			advance();
 			eatToken(Kind.TOKEN_LPAREN);
@@ -255,14 +255,14 @@ public class Parser {
 			ast.stm.T if_body = parseStatement();
 			eatToken(Kind.TOKEN_ELSE);
 			ast.stm.T else_body = parseStatement();
-			return new ast.stm.If(condition, if_body, else_body);
+			return new ast.stm.If(condition, if_body, else_body, lexer.lineno);
 		case TOKEN_WHILE:
 			advance();
 			eatToken(Kind.TOKEN_LPAREN);
 			ast.exp.T cond = parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
 			ast.stm.T body = parseStatement();
-			return new ast.stm.While(cond, body);
+			return new ast.stm.While(cond, body, lexer.lineno);
 		case TOKEN_SYSTEM:
 			advance();
 			eatToken(Kind.TOKEN_DOT);
@@ -273,7 +273,7 @@ public class Parser {
 			ast.exp.T exp = parseExp();
 			eatToken(Kind.TOKEN_RPAREN);
 			eatToken(Kind.TOKEN_SEMI);
-			return new ast.stm.Print(exp);
+			return new ast.stm.Print(exp, lexer.lineno);
 		case TOKEN_ID:
 			String id = current.lexeme;
 			advance();
@@ -281,7 +281,7 @@ public class Parser {
 				advance();
 				ast.exp.T exp1 = parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				return new ast.stm.Assign(id, exp1);
+				return new ast.stm.Assign(id, exp1, lexer.lineno);
 			} else if (current.kind == Kind.TOKEN_LBRACK) {
 				advance();
 				ast.exp.T index = parseExp();
@@ -289,7 +289,7 @@ public class Parser {
 				eatToken(Kind.TOKEN_ASSIGN);
 				ast.exp.T exp2 = parseExp();
 				eatToken(Kind.TOKEN_SEMI);
-				return new ast.stm.AssignArray(id, index, exp2);
+				return new ast.stm.AssignArray(id, index, exp2, lexer.lineno);
 			} else {
 				error("in parseStatement, TOKEN_ID case");
 				return null;
@@ -325,16 +325,16 @@ public class Parser {
 			if (current.kind == Kind.TOKEN_LBRACK) {
 				advance();
 				eatToken(Kind.TOKEN_RBRACK);
-				return new ast.type.IntArray();
+				return new ast.type.IntArray(lexer.lineno);
 			} else
-				return new ast.type.Int();
+				return new ast.type.Int(lexer.lineno);
 		case TOKEN_BOOLEAN:
 			advance();
-			return new ast.type.Boolean();
+			return new ast.type.Boolean(lexer.lineno);
 		case TOKEN_ID:// class type
 			String id = current.lexeme;
 			advance();
-			return new ast.type.Class(id);
+			return new ast.type.Class(id, lexer.lineno);
 		default:
 			error("in parseType, default case");
 			return null;
@@ -350,7 +350,7 @@ public class Parser {
 		String id = current.lexeme;
 		eatToken(Kind.TOKEN_ID);
 		eatToken(Kind.TOKEN_SEMI);
-		return new ast.dec.Dec(type, id);
+		return new ast.dec.Dec(type, id, lexer.lineno);
 	}
 
 	// VarDecls -> VarDecl VarDecls
@@ -394,13 +394,13 @@ public class Parser {
 			ast.type.T type = parseType();
 			String id = current.lexeme;
 			eatToken(Kind.TOKEN_ID);
-			result.add(new ast.dec.Dec(type, id));
+			result.add(new ast.dec.Dec(type, id, lexer.lineno));
 			while (current.kind == Kind.TOKEN_COMMER) {
 				advance();
 				ast.type.T type1 = parseType();
 				String id1 = current.lexeme;
 				eatToken(Kind.TOKEN_ID);
-				result.add(new ast.dec.Dec(type1, id1));
+				result.add(new ast.dec.Dec(type1, id1, lexer.lineno));
 			}
 		}
 		return result;
@@ -425,7 +425,7 @@ public class Parser {
 			ast.exp.T exp = parseExp();
 			eatToken(Kind.TOKEN_SEMI);
 			eatToken(Kind.TOKEN_RBRACE);
-			return new ast.method.Method(type, id, formalList, varDecl, statements, exp);
+			return new ast.method.Method(type, id, formalList, varDecl, statements, exp, lexer.lineno);
 		default:
 			error("in parseMethod, default case");
 			return null;
@@ -457,7 +457,7 @@ public class Parser {
 		LinkedList<ast.dec.T> varDecls = parseVarDecls();
 		LinkedList<ast.method.T> methodDecl = parseMethodDecls();
 		eatToken(Kind.TOKEN_RBRACE);
-		return new ast.classs.Class(id, extendss, varDecls, methodDecl);
+		return new ast.classs.Class(id, extendss, varDecls, methodDecl, lexer.lineno);
 	}
 
 	// ClassDecls -> ClassDecl ClassDecls
@@ -498,7 +498,7 @@ public class Parser {
 			ast.stm.T statement = parseStatement();
 			eatToken(Kind.TOKEN_RBRACE);
 			eatToken(Kind.TOKEN_RBRACE);
-			return new ast.mainClass.MainClass(id, argsId, statement);
+			return new ast.mainClass.MainClass(id, argsId, statement, lexer.lineno);
 		default:
 			error("in parseMainClass, default case");
 			return null;

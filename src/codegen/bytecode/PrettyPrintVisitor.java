@@ -1,5 +1,13 @@
 package codegen.bytecode;
 
+import codegen.bytecode.stm.Arraylength;
+import codegen.bytecode.stm.Getfield;
+import codegen.bytecode.stm.Iadd;
+import codegen.bytecode.stm.Iaload;
+import codegen.bytecode.stm.Iastore;
+import codegen.bytecode.stm.NewarrayInt;
+import codegen.bytecode.stm.Putfield;
+
 public class PrettyPrintVisitor implements Visitor {
 	private java.io.BufferedWriter writer;
 
@@ -41,49 +49,41 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(codegen.bytecode.stm.Aload s) {
 		this.isayln("aload " + s.index);
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Areturn s) {
 		this.isayln("areturn");
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Astore s) {
 		this.isayln("astore " + s.index);
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Goto s) {
 		this.isayln("goto " + s.l.toString());
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Ificmplt s) {
 		this.isayln("if_icmplt " + s.l.toString());
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Ifne s) {
 		this.isayln("ifne " + s.l.toString());
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Iload s) {
 		this.isayln("iload " + s.index);
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Imul s) {
 		this.isayln("imul");
-		return;
 	}
 
 	@Override
@@ -95,37 +95,31 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say(")");
 		s.rt.accept(this);
 		this.sayln("");
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Ireturn s) {
 		this.isayln("ireturn");
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Istore s) {
 		this.isayln("istore " + s.index);
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Isub s) {
 		this.isayln("isub");
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Label s) {
 		this.sayln(s.l.toString() + ":");
-		return;
 	}
 
 	@Override
 	public void visit(codegen.bytecode.stm.Ldc s) {
 		this.isayln("ldc " + s.i);
-		return;
 	}
 
 	@Override
@@ -133,7 +127,6 @@ public class PrettyPrintVisitor implements Visitor {
 		this.isayln("new " + s.c);
 		this.isayln("dup");
 		this.isayln("invokespecial " + s.c + "/<init>()V");
-		return;
 	}
 
 	@Override
@@ -141,7 +134,6 @@ public class PrettyPrintVisitor implements Visitor {
 		this.isayln("getstatic java/lang/System/out Ljava/io/PrintStream;");
 		this.isayln("swap");
 		this.isayln("invokevirtual java/io/PrintStream/println(I)V");
-		return;
 	}
 
 	// type
@@ -183,7 +175,6 @@ public class PrettyPrintVisitor implements Visitor {
 			s.accept(this);
 
 		this.sayln(".end method");
-		return;
 	}
 
 	// class
@@ -212,7 +203,7 @@ public class PrettyPrintVisitor implements Visitor {
 		// fields
 		for (codegen.bytecode.dec.T d : c.decs) {
 			codegen.bytecode.dec.Dec dd = (codegen.bytecode.dec.Dec) d;
-			this.say(".field public " + dd.id);
+			this.say(".field public " + dd.id + " ");
 			dd.type.accept(this);
 			this.sayln("");
 		}
@@ -237,7 +228,6 @@ public class PrettyPrintVisitor implements Visitor {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		return;
 	}
 
 	// main class
@@ -272,13 +262,11 @@ public class PrettyPrintVisitor implements Visitor {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		return;
 	}
 
 	// program
 	@Override
 	public void visit(codegen.bytecode.program.Program p) {
-
 		p.mainClass.accept(this);
 
 		for (codegen.bytecode.classs.T c : p.classes) {
@@ -287,4 +275,46 @@ public class PrettyPrintVisitor implements Visitor {
 
 	}
 
+	@Override
+	public void visit(Iadd iAdd) {
+		this.isayln("iadd");
+	}
+
+	@Override
+	public void visit(Iaload iaload) {
+		this.isayln("iaload");
+	}
+
+	@Override
+	public void visit(Arraylength arraylength) {
+		this.isayln("arraylength");
+	}
+
+	@Override
+	public void visit(NewarrayInt newarrayInt) {
+		this.isayln("newarray int");
+	}
+
+	@Override
+	public void visit(Iastore iastore) {
+		this.isayln("iastore");
+	}
+
+	@Override
+	public void visit(Getfield field) {
+		this.isayln("aload_0");
+		this.say("    getfield " + field.classId + "/" + field.id + " ");
+		field.type.accept(this);
+		this.sayln("");
+	}
+
+	@Override
+	public void visit(Putfield field) {
+		this.isayln("aload_0");
+		for (codegen.bytecode.stm.T item: field.assignList)
+			item.accept(this);
+		this.say("    putfield " + field.classId + "/" + field.id + " ");
+		field.type.accept(this);
+		this.sayln("");
+	}
 }

@@ -4,9 +4,11 @@ import ast.Visitor;
 
 public class Class extends T {
 	public String id;
+	public int lineno;
 
-	public Class(String id) {
+	public Class(String id, int lineno) {
 		this.id = id;
+		this.lineno = lineno;
 	}
 
 	@Override
