@@ -90,7 +90,7 @@ public class TranslateVisitor implements ast.Visitor {
 			t.accept(this);
 			at.add(this.type);
 		}
-		// FIXME the at is not right, we should generate declaration type instead of runtime type
+
 		emit(new codegen.bytecode.stm.Invokevirtual(e.id, e.type, at, rt));
 	}
 

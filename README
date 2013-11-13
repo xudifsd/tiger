@@ -1,0 +1,31 @@
+# for codegen option
+
+## compile to C programming language
+
+use
+
+    $ java Tiger -codegen C T.java
+
+the program will compile to C and generate C file under "/tmp/" (so this won't work in Windows system, only after you changed the path in codegen.C.PrettyPrintVisitor.java).
+
+if you want compile to executable directly you could use following command:
+
+    $ java Tiger -codegen C T.java -auto
+
+## compile to java byte code
+
+use
+
+    $ java Tiger -codegen bytecode T.java
+
+and it will generate some *.j file in your current working directory, then
+compile *.j into class file using:
+
+    $ java -jar ../jasmin.jar *.j
+
+this will generate *.class file in your current working directory, run the
+program using
+
+    $ java Main
+
+replace Main with your class with main method.
