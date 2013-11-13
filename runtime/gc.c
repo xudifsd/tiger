@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "runtime.h"
 
 // The Gimple Garbage Collector.
 
@@ -16,8 +17,7 @@
       | \<~~~~~~~ size ~~~~~>/ |
     from                       to
  */
-struct JavaHeap
-{
+struct JavaHeap {
   int size;         // in bytes, note that this if for semi-heap size
   char *from;       // the "from" space pointer
   char *fromFree;   // the next "free" space in the from space
@@ -33,8 +33,7 @@ struct JavaHeap heap;
 // Lab 4, exercise 10:
 // Given the heap size (in bytes), allocate a Java heap
 // in the C heap, initialize the relevant fields.
-void Tiger_heap_init (int heapSize)
-{
+void Tiger_heap_init (int heapSize) {
   // You should write 7 statement here:
   // #1: allocate a chunk of memory of size "heapSize" using "malloc"
 
@@ -98,8 +97,7 @@ p---->| v_0          | \
 //           an error message ("OutOfMemory") and exit.
 //           (However, a production compiler will try to expand
 //           the Java heap.)
-void *Tiger_new (void *vtable, int size)
-{
+void *Tiger_new (void *vtable, int size) {
   // Your code here:
   
 }
@@ -138,8 +136,7 @@ p---->| e_0          | \
 //           an error message ("OutOfMemory") and exit.
 //           (However, a production compiler will try to expand
 //           the Java heap.)
-void *Tiger_new_array (int length)
-{
+void *Tiger_new_array (int length) {
   // Your code here:
   
 }
@@ -149,9 +146,24 @@ void *Tiger_new_array (int length)
 
 // Lab 4, exercise 12:
 // A copying collector based-on Cheney's algorithm.
-static void Tiger_gc ()
-{
+static void Tiger_gc () {
   // Your code here:
   
 }
 
+void *xmalloc(int size) {
+    void *result = malloc(size);
+    if (result == NULL) {
+        fprintf(stderr, "fatal malloc returns NULL\n");
+        exit(1);
+    }
+    return result;
+}
+
+struct _runtime_int_array *Tiger_new_int_array(int size) {
+    struct _runtime_int_array *result = xmalloc(sizeof(struct _runtime_int_array));
+    result->length = size;
+    result->data = (int *)xmalloc(size * sizeof(int));
+    memset(result->data, 0, size * sizeof(int));
+    return result;
+}

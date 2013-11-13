@@ -1,6 +1,7 @@
 package elaborator;
 
-import util.Todo;
+import java.util.Map;
+import java.util.Set;
 
 public class ClassTable {
 	// map each class name (a string), to the class bindings.
@@ -72,7 +73,11 @@ public class ClassTable {
 	}
 
 	public void dump() {
-		new Todo();
+		Set<Map.Entry<String, ClassBinding>> set = table.entrySet();
+		System.out.println("dump of ClassTable:");
+
+		for (Map.Entry<String, ClassBinding> entry : set)
+			System.out.format("\t%s %s\n", entry.getKey(), entry.getValue().toString());
 	}
 
 	@Override

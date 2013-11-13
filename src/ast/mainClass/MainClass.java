@@ -6,11 +6,13 @@ public class MainClass extends T {
 	public String id;
 	public String arg;
 	public ast.stm.T stm;
+	public int lineno;
 
-	public MainClass(String id, String arg, ast.stm.T stm) {
+	public MainClass(String id, String arg, ast.stm.T stm, int lineno) {
 		this.id = id;
 		this.arg = arg;
 		this.stm = stm;
+		this.lineno = lineno;
 	}
 
 	@Override

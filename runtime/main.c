@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "runtime.h"
 
 extern void Tiger_heap_init (int);
 
-int main (int argc, char **argv)
-{
+int main (int argc, char **argv) {
   // Lab 4, exercise 13:
   // You should add some command arguments to the generated executable
   // to control the behaviour of your Gimple garbage collector.
@@ -17,7 +17,7 @@ int main (int argc, char **argv)
   // You can use the offered function in file "control.c"
   // and "command-line.c"  
   // Your code here:
-  
+
   // initialize the Java heap
   Tiger_heap_init (Control_heapSize);
 

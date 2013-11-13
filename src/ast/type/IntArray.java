@@ -3,7 +3,10 @@ package ast.type;
 import ast.Visitor;
 
 public class IntArray extends T {
-	public IntArray() {
+	public int lineno;
+
+	public IntArray(int lineno) {
+		this.lineno = lineno;
 	}
 
 	@Override

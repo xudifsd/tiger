@@ -4,11 +4,15 @@ public class AssignArray extends T {
 	public String id;
 	public ast.exp.T index;
 	public ast.exp.T exp;
+	public boolean isField;
+	public int lineno;
 
-	public AssignArray(String id, ast.exp.T index, ast.exp.T exp) {
+	public AssignArray(String id, ast.exp.T index, ast.exp.T exp, int lineno) {
 		this.id = id;
 		this.index = index;
 		this.exp = exp;
+		this.isField = false;
+		this.lineno = lineno;
 	}
 
 	@Override

@@ -21,10 +21,11 @@ public class Control {
 	// code generator
 	public static String outputName = null;
 
+	public static boolean auto = false;
+
 	public enum Codegen_Kind_t {
 		Bytecode, C, Dalvik, X86
 	}
 
 	public static Codegen_Kind_t codegen = Codegen_Kind_t.C;
-
 }

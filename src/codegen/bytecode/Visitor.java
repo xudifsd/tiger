@@ -57,4 +57,18 @@ public interface Visitor {
 
 	// program
 	public void visit(codegen.bytecode.program.Program p);
+
+	public void visit(Iadd iAdd);
+
+	public void visit(Iaload iaload);
+
+	public void visit(Arraylength arraylength);
+
+	public void visit(NewarrayInt newarrayInt);
+
+	public void visit(Iastore iastore);
+
+	public void visit(Getfield getfield);
+
+	public void visit(Putfield putfield);
 }
