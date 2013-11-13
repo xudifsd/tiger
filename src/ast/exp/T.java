@@ -1,5 +1,4 @@
 package ast.exp;
 
-public abstract class T implements ast.Acceptable
-{
+public abstract class T implements ast.Acceptable {
 }

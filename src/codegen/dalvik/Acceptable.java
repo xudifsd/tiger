@@ -1,6 +1,5 @@
 package codegen.dalvik;
 
-public interface Acceptable
-{
-  public void accept(Visitor v);
+public interface Acceptable {
+	public void accept(Visitor v);
 }
