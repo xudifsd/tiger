@@ -17,7 +17,6 @@ public class Class extends T {
 		this.decs = decs;
 		this.methods = methods;
 		this.lineno = lineno;
->>>>>>> Lab3Solution
 	}
 
 	@Override
