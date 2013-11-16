@@ -5,6 +5,7 @@ public class Assign extends T {
 	public ast.exp.T exp;
 	public ast.type.T type; // type of the id
 	public boolean isField;
+	public boolean isLocal;
 	public int lineno;
 
 	public Assign(String id, ast.exp.T exp, int lineno) {
@@ -12,6 +13,7 @@ public class Assign extends T {
 		this.exp = exp;
 		this.type = null;
 		this.isField = false;
+		this.isLocal = false;
 		this.lineno = lineno;
 	}
 

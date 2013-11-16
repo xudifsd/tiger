@@ -8,6 +8,6 @@ public class Temp {
 
 	// Factory pattern
 	public static String next() {
-		return "x_" + (Temp.count++);
+		return "__tmp_x_" + (Temp.count++);
 	}
 }

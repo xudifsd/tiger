@@ -22,5 +22,5 @@ int main (int argc, char **argv) {
   Tiger_heap_init (Control_heapSize);
 
   // enter Java code...
-  Tiger_main ();
+  Tiger_main(1);
 }

@@ -6,11 +6,13 @@ public class Assign extends T {
 	public String id;
 	public codegen.C.exp.T exp;
 	public boolean isField;
+	public boolean isLocal;
 
-	public Assign(String id, codegen.C.exp.T exp, boolean isField) {
+	public Assign(String id, codegen.C.exp.T exp, boolean isField, boolean isLocal) {
 		this.id = id;
 		this.exp = exp;
 		this.isField = isField;
+		this.isLocal = isLocal;
 	}
 
 	@Override

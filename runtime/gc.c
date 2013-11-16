@@ -9,7 +9,7 @@
 //===============================================================//
 // The Java Heap data structure.
 
-/*   
+/*
       ----------------------------------------------------
       |                        |                         |
       ----------------------------------------------------
@@ -73,9 +73,9 @@ void *prev = 0;
       |--------------|
       | length       | (this field should be empty for normal objects)
       |--------------|
-      | forwarding   | 
+      | forwarding   |
       |--------------|\
-p---->| v_0          | \      
+p---->| v_0          | \
       |--------------|  s
       | ...          |  i
       |--------------|  z
@@ -92,14 +92,14 @@ p---->| v_0          | \
 //   2. if there is no enough space left in the "from" space, then
 //      you should call the function "Tiger_gc()" to collect garbages.
 //      and after the collection, there are still two sub-cases:
-//        a: if there is enough space, you can do allocations just as case 1; 
+//        a: if there is enough space, you can do allocations just as case 1;
 //        b: if there is still no enough space, you can just issue
 //           an error message ("OutOfMemory") and exit.
 //           (However, a production compiler will try to expand
 //           the Java heap.)
 void *Tiger_new (void *vtable, int size) {
   // Your code here:
-  
+
 }
 
 // "new" an array of size "length", do necessary
@@ -112,9 +112,9 @@ void *Tiger_new (void *vtable, int size) {
       |--------------|
       | length       |
       |--------------|
-      | forwarding   | 
+      | forwarding   |
       |--------------|\
-p---->| e_0          | \      
+p---->| e_0          | \
       |--------------|  s
       | ...          |  i
       |--------------|  z

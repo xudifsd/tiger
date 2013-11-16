@@ -125,6 +125,8 @@ public class ElaboratorVisitor implements ast.Visitor {
 			// useful in later phase.
 			e.isField = true;
 		}
+		if (this.methodTable.locals.get(e.id) != null)
+			e.isLocal = true;
 		if (type == null)
 			error(e.id + " is not defined");
 		this.type = type;
@@ -219,6 +221,10 @@ public class ElaboratorVisitor implements ast.Visitor {
 			type = this.classTable.get(this.currentClass, s.id);
 			s.isField = true;
 		}
+
+		if (this.methodTable.locals.get(s.id) != null)
+			s.isLocal = true;
+
 		if (type == null)
 			error("in Assign, unknow " + s.id);
 		s.type = type;
@@ -235,6 +241,10 @@ public class ElaboratorVisitor implements ast.Visitor {
 			type = this.classTable.get(this.currentClass, s.id);
 			s.isField = true;
 		}
+
+		if (this.methodTable.locals.get(s.id) != null)
+			s.isLocal = true;
+
 		if (type == null)
 			error("in AssignArray, unknow int array");
 		if (!type.toString().equals("@int[]"))
