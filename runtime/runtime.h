@@ -2,9 +2,15 @@
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-struct _runtime_int_array {
-    int length;
-    int *data;
+struct __tiger_obj_header {
+    union {
+        void *vptr;
+        int *data;
+    } __u;
+    int __obj_or_array;//0 for obj 1 for array
+    unsigned int __length;
+    void *__forwarding;
+    /* other object field */
 };
 
 // all methods' gc-frame contains this header's field
@@ -21,6 +27,6 @@ extern void *gc_frame_prev;
 extern void Tiger_main(int dummy);
 extern void *xmalloc(int size);
 extern void *Tiger_new(void *vtable, int size);
-extern struct _runtime_int_array *Tiger_new_int_array(int size);
+extern struct __tiger_obj_header *Tiger_new_array(int size);
 extern int System_out_println(int i);
 #endif /* RUNTIME_H */

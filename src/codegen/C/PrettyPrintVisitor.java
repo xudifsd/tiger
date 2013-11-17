@@ -67,7 +67,7 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(codegen.C.exp.ArraySelect e) {
 		e.array.accept(this);
-		this.say("->data[");
+		this.say("->__u.data[");
 		e.index.accept(this);
 		this.say("]");
 	}
@@ -107,7 +107,7 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(codegen.C.exp.Length e) {
 		this.say("(");
 		e.array.accept(this);
-		this.say("->length)");
+		this.say("->__length)");
 	}
 
 	@Override
@@ -121,7 +121,7 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.NewIntArray e) {
-		this.say("Tiger_new_int_array(");
+		this.say("Tiger_new_array(");
 		e.exp.accept(this);
 		this.say(")");
 	}
@@ -189,7 +189,7 @@ public class PrettyPrintVisitor implements Visitor {
 			this.say("this->");
 		else if (s.isLocal)
 			this.say("__gc_frame.");
-		this.say(s.id + "->data[");
+		this.say(s.id + "->__u.data[");
 		s.index.accept(this);
 		this.say("] = ");
 		s.exp.accept(this);
@@ -259,7 +259,7 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.type.IntArray t) {
-		this.say("struct _runtime_int_array *");
+		this.say("struct __tiger_obj_header *");
 	}
 
 	// dec
@@ -394,7 +394,8 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(codegen.C.mainMethod.MainMethod m) {
-		this.sayln("void Tiger_main (int this) {//this is just a dummy argument to get base address of argument in main");
+		this.sayln("void Tiger_main (int __dummy) {");
+		this.sayln("//'__dummy' is just a dummy argument to get base address of argument in main");
 		this.indent();
 
 		// generate gc-frame
@@ -437,7 +438,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("__gc_frame.__arguments_gc_map = NULL;");
 		this.printSpaces();
-		this.sayln("__gc_frame.__arguments_base_address = &this;");
+		this.sayln("__gc_frame.__arguments_base_address = &__dummy;");
 		this.printSpaces();
 		this.say("__gc_frame.__locals_gc_number = ");
 		int __locals_gc_number = 0;
@@ -519,6 +520,12 @@ public class PrettyPrintVisitor implements Visitor {
 		this.indent();
 		this.printSpaces();
 		this.sayln("struct " + c.id + "_vtable *vptr;");
+		this.printSpaces();
+		this.sayln("int __obj_or_array;//0 for obj 1 for array");
+		this.printSpaces();
+		this.sayln("unsigned int __length;//this is unused");
+		this.printSpaces();
+		this.sayln("void *__forwarding;//used for gc");
 		for (codegen.C.Tuple t : c.decs) {
 			this.printSpaces();
 			t.type.accept(this);

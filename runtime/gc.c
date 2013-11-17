@@ -34,29 +34,19 @@ struct JavaHeap heap;
 // Given the heap size (in bytes), allocate a Java heap
 // in the C heap, initialize the relevant fields.
 void Tiger_heap_init (int heapSize) {
-  // You should write 7 statement here:
-  // #1: allocate a chunk of memory of size "heapSize" using "malloc"
-
-  // #2: initialize the "size" field, note that "size" field
-  // is for semi-heap, but "heapSize" is for the whole heap.
-
-  // #3: initialize the "from" field (with what value?)
-
-  // #4: initialize the "fromFree" field (with what value?)
-
-  // #5: initialize the "to" field (with what value?)
-
-  // #6: initizlize the "toStart" field with NULL;
-
-  // #7: initialize the "toNext" field with NULL;
-
-  return;
+  void *m1 = xmalloc(heapSize);
+  void *m2 = xmalloc(heapSize);
+  heap.size = heapSize;
+  heap.from = m1;
+  heap.fromFree = m1;
+  heap.to = m2;
+  heap.toStart = NULL;
+  heap.toNext = NULL;
 }
 
 // The "prev" pointer, pointing to the top frame on the GC stack. 
 // (see part A of Lab 4)
-void *prev = 0;
-
+void *gc_frame_prev = NULL;
 
 
 //===============================================================//
@@ -136,7 +126,7 @@ p---->| e_0          | \
 //           an error message ("OutOfMemory") and exit.
 //           (However, a production compiler will try to expand
 //           the Java heap.)
-void *Tiger_new_array (int length) {
+struct __tiger_obj_header *Tiger_new_array (int length) {
   // Your code here:
   
 }
@@ -160,10 +150,12 @@ void *xmalloc(int size) {
     return result;
 }
 
-struct _runtime_int_array *Tiger_new_int_array(int size) {
-    struct _runtime_int_array *result = xmalloc(sizeof(struct _runtime_int_array));
+/*
+struct __tiger_obj_header *Tiger_new_array(int size) {
+    struct __tiger_obj_header *result = xmalloc(sizeof(struct __tiger_obj_header));
     result->length = size;
     result->data = (int *)xmalloc(size * sizeof(int));
     memset(result->data, 0, size * sizeof(int));
     return result;
 }
+*/
