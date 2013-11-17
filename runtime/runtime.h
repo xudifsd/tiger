@@ -9,10 +9,10 @@ struct _runtime_int_array {
 
 // all methods' gc-frame contains this header's field
 struct gc_frame_header {
-    void *prev;
-    char *arguments_gc_map;
-    void *arguments_base_address;
-    char *locals_gc_map;
+    void *__prev;
+    char *__arguments_gc_map;
+    void *__arguments_base_address;
+    unsigned int __locals_gc_number;
     /* specified fields of method */
 };
 

@@ -77,7 +77,8 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say("(__gc_frame." + e.assign + "=");
 		e.exp.accept(this);
 		this.say(", ");
-		this.say("__gc_frame."+e.assign + "->vptr->" + e.id + "(" + "__gc_frame." + e.assign);
+		this.say("__gc_frame." + e.assign + "->vptr->" + e.id + "("
+				+ "__gc_frame." + e.assign);
 		int size = e.args.size();
 		if (size == 0) {
 			this.say("))");
@@ -94,8 +95,11 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(codegen.C.exp.Id e) {
 		if (e.isField)
 			this.say("this->");
-		else if (e.isLocal)
-			this.say("__gc_frame.");
+		else if (e.isLocal) {
+			if (e.type instanceof ast.type.IntArray
+					|| e.type instanceof ast.type.Class)
+				this.say("__gc_frame.");
+		}
 		this.say(e.id);
 	}
 
@@ -169,8 +173,11 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(codegen.C.stm.Assign s) {
 		if (s.isField)
 			this.say("this->");
-		else if (s.isLocal)
-			this.say("__gc_frame.");
+		else if (s.isLocal) {
+			if (s.type instanceof ast.type.IntArray
+					|| s.type instanceof ast.type.Class)
+				this.say("__gc_frame.");
+		}
 		this.say(s.id + " = ");
 		s.exp.accept(this);
 		this.sayln(";");
@@ -292,18 +299,6 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.sayln("\";");
 
-		// generate gc-map for locals
-		this.printSpaces();
-		this.say("char *__locals_gc_map = \"");
-		for (codegen.C.dec.T f : m.locals) {
-			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) f;
-			if (dec.type instanceof codegen.C.type.Class)
-				this.say("1");
-			else
-				this.say("0");
-		}
-		this.sayln("\";");
-
 		// generate gc-frame
 		this.sayln("");
 		this.printSpaces();
@@ -316,13 +311,16 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("void *__arguments_base_address;");
 		this.printSpaces();
-		this.sayln("char *__locals_gc_map;");
-		// method specified fields(locals)
+		this.sayln("unsigned int __locals_gc_number;");
+		// method specified fields(locals) of reference type
 		for (codegen.C.dec.T d : m.locals) {
 			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
-			this.printSpaces();
-			dec.type.accept(this);
-			this.sayln(" " + dec.id + ";");
+			if (dec.type instanceof codegen.C.type.IntArray
+					|| dec.type instanceof codegen.C.type.Class) {
+				this.printSpaces();
+				dec.type.accept(this);
+				this.sayln(" " + dec.id + ";");
+			}
 		}
 		this.unIndent();
 		this.printSpaces();
@@ -338,7 +336,26 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("__gc_frame.__arguments_base_address = &this;");
 		this.printSpaces();
-		this.sayln("__gc_frame.__locals_gc_map = __locals_gc_map;\n");
+		this.say("__gc_frame.__locals_gc_number = ");
+		int __locals_gc_number = 0;
+		for (codegen.C.dec.T f : m.locals) {
+			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) f;
+			if (dec.type instanceof codegen.C.type.Class
+					|| dec.type instanceof codegen.C.type.IntArray)
+				__locals_gc_number++;
+		}
+		this.say(new Integer(__locals_gc_number).toString());
+		this.sayln(";");
+
+		// method specified fields(locals) of non-reference type
+		for (codegen.C.dec.T d : m.locals) {
+			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
+			if (dec.type instanceof codegen.C.type.Int) {
+				this.printSpaces();
+				dec.type.accept(this);
+				this.sayln(" " + dec.id + ";");
+			}
+		}
 
 		// method body
 		for (codegen.C.stm.T s : m.stms) {
@@ -364,18 +381,6 @@ public class PrettyPrintVisitor implements Visitor {
 		this.sayln("void Tiger_main (int this) {//this is just a dummy argument to get base address of argument in main");
 		this.indent();
 
-		// generate gc-map for locals
-		this.printSpaces();
-		this.say("char *__locals_gc_map = \"");
-		for (codegen.C.dec.T f : m.locals) {
-			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) f;
-			if (dec.type instanceof codegen.C.type.Class)
-				this.say("1");
-			else
-				this.say("0");
-		}
-		this.sayln("\";");
-
 		// generate gc-frame
 		this.sayln("");
 		this.printSpaces();
@@ -388,13 +393,16 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("void *__arguments_base_address;");
 		this.printSpaces();
-		this.sayln("char *__locals_gc_map;");
-		// method specified fields(locals)
+		this.sayln("unsigned int __locals_gc_number;");
+		// method specified fields(locals) of reference type
 		for (codegen.C.dec.T d : m.locals) {
 			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
-			this.printSpaces();
-			dec.type.accept(this);
-			this.sayln(" " + dec.id + ";");
+			if (dec.type instanceof codegen.C.type.IntArray
+					|| dec.type instanceof codegen.C.type.Class) {
+				this.printSpaces();
+				dec.type.accept(this);
+				this.sayln(" " + dec.id + ";");
+			}
 		}
 		this.unIndent();
 		this.printSpaces();
@@ -410,7 +418,16 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("__gc_frame.__arguments_base_address = &this;");
 		this.printSpaces();
-		this.sayln("__gc_frame.__locals_gc_map = __locals_gc_map;\n");
+		this.say("__gc_frame.__locals_gc_number = ");
+		int __locals_gc_number = 0;
+		for (codegen.C.dec.T f : m.locals) {
+			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) f;
+			if (dec.type instanceof codegen.C.type.Class
+					|| dec.type instanceof codegen.C.type.IntArray)
+				__locals_gc_number++;
+		}
+		this.say(new Integer(__locals_gc_number).toString());
+		this.sayln(";");
 
 		this.printSpaces();
 		m.stm.accept(this);
