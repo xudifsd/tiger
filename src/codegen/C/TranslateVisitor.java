@@ -278,8 +278,9 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.classs.Class c) {
 		ClassBinding cb = this.table.get(c.id);
-		this.classes.add(new codegen.C.classs.Class(c.id, cb.fields));
-		this.vtables.add(new codegen.C.vtable.Vtable(c.id, cb.methods));
+		codegen.C.classs.T classs = new codegen.C.classs.Class(c.id, cb.fields);
+		this.classes.add(classs);
+		this.vtables.add(new codegen.C.vtable.Vtable(c.id, cb.methods, classs));
 		this.classId = c.id;
 		for (ast.method.T m : c.methods) {
 			m.accept(this);
@@ -293,7 +294,7 @@ public class TranslateVisitor implements ast.Visitor {
 		ClassBinding cb = this.table.get(c.id);
 		codegen.C.classs.T newc = new codegen.C.classs.Class(c.id, cb.fields);
 		this.classes.add(newc);
-		this.vtables.add(new codegen.C.vtable.Vtable(c.id, cb.methods));
+		this.vtables.add(new codegen.C.vtable.Vtable(c.id, cb.methods, newc));
 
 		this.tmpVars = new java.util.LinkedList<codegen.C.dec.T>();
 

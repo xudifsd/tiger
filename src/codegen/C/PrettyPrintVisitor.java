@@ -297,10 +297,12 @@ public class PrettyPrintVisitor implements Visitor {
 			else
 				this.say("0");
 		}
-		this.sayln("\";");
+		this.sayln("\"; // generate gc-map for formals");
 
 		// generate gc-frame
 		this.sayln("");
+		this.printSpaces();
+		this.sayln("// START generate gc-frame");
 		this.printSpaces();
 		this.sayln("struct {");
 		this.indent();
@@ -324,9 +326,13 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.unIndent();
 		this.printSpaces();
-		this.sayln("} __gc_frame;\n");
+		this.sayln("} __gc_frame;");
+		this.printSpaces();
+		this.sayln("// END generate gc-frame\n");
 
 		// generate code to push gc-frame
+		this.printSpaces();
+		this.sayln("// START generate code to push gc-frame");
 		this.printSpaces();
 		this.sayln("__gc_frame.__prev = gc_frame_prev;");
 		this.printSpaces();
@@ -346,8 +352,12 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.say(new Integer(__locals_gc_number).toString());
 		this.sayln(";");
+		this.printSpaces();
+		this.sayln("// END generate code to push gc-frame\n");
 
 		// method specified fields(locals) of non-reference type
+		this.printSpaces();
+		this.sayln("// START method specified fields(locals) of non-reference type");
 		for (codegen.C.dec.T d : m.locals) {
 			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
 			if (dec.type instanceof codegen.C.type.Int) {
@@ -356,16 +366,22 @@ public class PrettyPrintVisitor implements Visitor {
 				this.sayln(" " + dec.id + ";");
 			}
 		}
+		this.printSpaces();
+		this.sayln("// END method specified fields(locals) of non-reference type\n");
 
 		// method body
+		this.printSpaces();
+		this.sayln("// START real body");
 		for (codegen.C.stm.T s : m.stms) {
 			this.printSpaces();
 			s.accept(this);
 		}
+		this.printSpaces();
+		this.sayln("// END real body\n");
 
 		// generate code to pop gc-frame
 		this.printSpaces();
-		this.sayln("gc_frame_prev = __gc_frame.__prev;");
+		this.sayln("gc_frame_prev = __gc_frame.__prev; // pop gc-frame");
 
 		this.printSpaces();
 		this.say("return ");
@@ -382,7 +398,8 @@ public class PrettyPrintVisitor implements Visitor {
 		this.indent();
 
 		// generate gc-frame
-		this.sayln("");
+		this.printSpaces();
+		this.sayln("// START generate gc-frame");
 		this.printSpaces();
 		this.sayln("struct {");
 		this.indent();
@@ -406,9 +423,13 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.unIndent();
 		this.printSpaces();
-		this.sayln("} __gc_frame;\n");
+		this.sayln("} __gc_frame;");
+		this.printSpaces();
+		this.sayln("// END generate gc-frame\n");
 
-		// generate code to change gc-frame
+		// generate code to push gc-frame
+		this.printSpaces();
+		this.sayln("// START generate code to push gc-frame");
 		this.printSpaces();
 		this.sayln("__gc_frame.__prev = gc_frame_prev;");
 		this.printSpaces();
@@ -428,13 +449,19 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		this.say(new Integer(__locals_gc_number).toString());
 		this.sayln(";");
+		this.printSpaces();
+		this.sayln("// END generate code to push gc-frame\n");
 
 		this.printSpaces();
+		this.sayln("// START real body");
+		this.printSpaces();
 		m.stm.accept(this);
+		this.printSpaces();
+		this.sayln("// END real body");
 
 		// generate code to pop gc-frame
 		this.printSpaces();
-		this.sayln("gc_frame_prev = __gc_frame.__prev;");
+		this.sayln("gc_frame_prev = __gc_frame.__prev; // pop gc-frame");
 
 		this.unIndent();
 		this.printSpaces();
@@ -446,6 +473,8 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(codegen.C.vtable.Vtable v) {
 		this.sayln("struct " + v.id + "_vtable {");
 		this.indent();
+		this.printSpaces();
+		this.sayln("const char *__class_gc_map;");
 		for (codegen.C.Ftuple t : v.ms) {
 			this.printSpaces();
 			t.ret.accept(this);
@@ -459,6 +488,21 @@ public class PrettyPrintVisitor implements Visitor {
 	private void outputVtable(codegen.C.vtable.Vtable v) {
 		this.sayln("struct " + v.id + "_vtable " + v.id + "_vtable_ = {");
 		this.indent();
+
+		// generate class gc map
+		this.printSpaces();
+		this.say("\"");
+		codegen.C.classs.Class classs = (codegen.C.classs.Class)v.classs;
+		for (codegen.C.Tuple dec : classs.decs) {
+			if (dec.type instanceof codegen.C.type.IntArray ||
+					dec.type instanceof codegen.C.type.Class)
+				this.say("1");
+			else
+				this.say("0");
+		}
+		this.sayln("\",");
+
+
 		for (codegen.C.Ftuple t : v.ms) {
 			this.printSpaces();
 			this.sayln(t.classs + "_" + t.id + ",");
