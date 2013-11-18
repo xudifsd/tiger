@@ -163,7 +163,7 @@ public class Tiger {
 			case C:
 				try {
 					Process p = Runtime.getRuntime().exec(
-						"gcc " + Control.outputName + " ../runtime/runtime.c " +
+						"gcc -g " + Control.outputName + " ../runtime/runtime.c " +
 						"-I ../runtime/");
 					p.waitFor();
 					if (p.exitValue() != 0) {
