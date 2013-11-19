@@ -28,7 +28,7 @@ struct gc_frame_header {
     char *__arguments_gc_map;
     void *__arguments_base_address;
     unsigned long __locals_gc_number;
-    /* specified fields of method */
+    /* specified fields of method, contains only reference */
 };
 
 extern void *gc_frame_prev;

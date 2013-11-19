@@ -6,12 +6,10 @@
 #include "control.h"
 #include "runtime.h"
 
-#define MAC
-// NOTE if you're using linux other mac you should delet previous line
-#ifdef MAC
-#define GET_STACK_ARG_ADDRESS(base, index) ((base)-(index)*sizeof(long))
+#ifdef __APPLE__
+#define GET_STACK_ARG_ADDRESS(base, index) (((void *)base)-(index)*sizeof(void *))
 #else
-#define GET_STACK_ARG_ADDRESS(base, index) ((base)+(index)*sizeof(long))
+#define GET_STACK_ARG_ADDRESS(base, index) (((void *)base)+(index)*sizeof(void *))
 #endif
 
 void log(const char *fmt, ...) {
@@ -92,7 +90,7 @@ struct node {
 void append(struct node **head, struct node **tail, void **to_be_process) {
     if (!(*((struct __tiger_obj_header **)to_be_process)))
         return;
-    log("debug: add 0x%lx to to-do list, have content 0x%lx",
+    log("debug: in append add 0x%lx to to-do list, have content 0x%lx",
             (unsigned long)to_be_process,
             (unsigned long)(*((struct __tiger_obj_header **)to_be_process)));
     struct node *new = (struct node *)xmalloc(sizeof(struct node));
@@ -151,7 +149,7 @@ void forward(struct node **head, struct node **tail, void **p) {
         *root = to_be_process->__forwarding;
         return;
     }
-    log("debug: processing ox%lx have content 0x%lx", (unsigned long)root, (unsigned long)to_be_process);
+    log("debug: processing 0x%lx have content 0x%lx", (unsigned long)root, (unsigned long)to_be_process);
     long size = sizeof(struct __tiger_obj_header);
     struct vtable_header *vtable = (struct vtable_header *)to_be_process->__u.vptr;
     switch (to_be_process->__obj_or_array) {
@@ -172,14 +170,18 @@ void forward(struct node **head, struct node **tail, void **p) {
     heap.toNext += size;
     if (to_be_process->__obj_or_array == 0) {
         /* obj */
-        void **next = to_be_process + sizeof(struct __tiger_obj_header);
+        void **next = (void *)to_be_process + sizeof(struct __tiger_obj_header);
         const char *c;
         int index;
         for (index = 0, c = vtable->__class_gc_map;
-                *c;
+                *c != '\0';
                 c++, index++) {
-            if (*c == '1')
-                append(head, tail, next + index*sizeof(void *));
+            if (*c == '1') {
+                log("debug: add 0x%lx to to-do list in the body of 0x%lx",
+                        (unsigned long)next + index*sizeof(void *),
+                        (unsigned long)to_be_process);
+                append(head, tail, (void *)next + index*sizeof(void *));
+            }
         }
     }
 }
@@ -213,21 +215,24 @@ void Tiger_gc() {
         if (stack_top->__arguments_gc_map != NULL) {
             char *p = stack_top->__arguments_gc_map;
             int index = 0;
-            for (; *p; p++, index++) {
+            log("debug: deallocating arguments, __arguments_gc_map is '%s'", stack_top->__arguments_gc_map);
+            for (; *p != '\0'; p++, index++) {
                 if (*p == '1') {
-                    log("debug: deallocating arguments");
+                    log("debug: using GET_STACK_ARG_ADDRESS of index %d", index);
                     append(&head, &tail, GET_STACK_ARG_ADDRESS(stack_top->__arguments_base_address, index));
                 }
             }
         }
         if (stack_top->__locals_gc_number != 0) {
-            void *base = &stack_top->__locals_gc_number;
-            //makes sure __locals_gc_number is the last know element of struct gc_frame_header
-            base += sizeof(unsigned long);
+            log("debug: deallocating local, __locals_gc_number is %d", stack_top->__locals_gc_number);
+            void **base = (void *)stack_top + sizeof(struct gc_frame_header);
             unsigned long index = 0;
             for (; index < stack_top->__locals_gc_number;
                     index++) {
-                    append(&head, &tail, base+index*sizeof(void *));
+                log("debug: add 0x%lx to to-do list in local of index %ld",
+                        (unsigned long)base+index*sizeof(void *),
+                        index);
+                append(&head, &tail, (void *)base+index*sizeof(void *));
             }
         }
         process_list(&head, &tail);
@@ -238,7 +243,7 @@ void Tiger_gc() {
 
     long size_after_gc = heap.fromFree - heap.from;
     time_t end = time(NULL);
-    log("info: %d round of GC: %2fs, collected %ld bytes",
+    log("info: %d round of GC: %.4fs, collected %ld bytes",
                     round,
                     difftime(end, start),
                     size_before_gc - size_after_gc);
@@ -302,7 +307,7 @@ void *Tiger_new(void *vtable, int size) {
             memset(result, 0, size);
             result->__u.vptr = vtable;
             result->__obj_or_array = 0;//obj
-            log("debug: allocated 0x%lx obj", (unsigned long)result);
+            log("debug: allocated 0x%lx obj of %d bytes", (unsigned long)result, size);
             return result;
         }
     }
@@ -364,7 +369,7 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
             memset(result, 0, size);
             result->__u.length = length;
             result->__obj_or_array = 1;//array
-            log("debug: allocated 0x%lx array", (unsigned long)result);
+            log("debug: allocated 0x%lx array of %d bytes", (unsigned long)result, size);
             return result;
         }
     }

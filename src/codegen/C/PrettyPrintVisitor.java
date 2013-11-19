@@ -292,7 +292,8 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say("char *__arguments_gc_map = \"");
 		for (codegen.C.dec.T f : m.formals) {
 			codegen.C.dec.Dec dec = (codegen.C.dec.Dec) f;
-			if (dec.type instanceof codegen.C.type.Class)
+			if (dec.type instanceof codegen.C.type.Class ||
+					dec.type instanceof codegen.C.type.IntArray)
 				this.say("1");
 			else
 				this.say("0");
