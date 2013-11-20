@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <stdarg.h>
+#include <sys/time.h>
 #include "control.h"
 #include "runtime.h"
 
@@ -194,11 +194,15 @@ void process_list(struct node **head, struct node **tail) {
     }
 }
 
+double get_time_diff(struct timeval end, struct timeval start) {
+    return end.tv_sec - start.tv_sec + (end.tv_usec/1000000.0 - start.tv_usec/1000000.0);
+}
+
 void Tiger_gc() {
     static int round = 0;
-    time_t start;
+    struct timeval start, end;
     long size_before_gc;
-    start = time(NULL);
+    gettimeofday(&start, NULL);
     size_before_gc = heap.fromFree - heap.from;
 
     struct node *head = NULL;
@@ -242,10 +246,10 @@ void Tiger_gc() {
     heap.toStart = heap.toNext = heap.to;
 
     long size_after_gc = heap.fromFree - heap.from;
-    time_t end = time(NULL);
-    log("info: %d round of GC: %.4fs, collected %ld bytes",
+    gettimeofday(&end, NULL);
+    log("info: %d round of GC: %.5fs, collected %ld bytes",
                     round,
-                    difftime(end, start),
+                    get_time_diff(end, start),
                     size_before_gc - size_after_gc);
 }
 
