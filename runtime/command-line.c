@@ -18,10 +18,6 @@ typedef enum {
 /*        all functions */
 
 
-static void Arg_setHeapSize(int heapSize) {
-  Control_heapSize = heapSize;
-}
-
 static void Arg_setGcLog(int doLog) {
     if (doLog) {
         gcLog = 1;
@@ -47,11 +43,6 @@ struct Arg_t {
 
 /* all available arguments */
 static struct Arg_t allArgs[] = {
-  {"heapSize",
-   "<n>",
-   "set the Java heap size (in bytes)",
-   ARGTYPE_INT,
-   Arg_setHeapSize},
   {"gcLog",
    "<true|false>",
    "ouput gc log to debug or not",

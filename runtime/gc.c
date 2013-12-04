@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/mman.h>
 #include "control.h"
 #include "runtime.h"
 
@@ -26,113 +28,115 @@ void log(const char *fmt, ...) {
 void *xmalloc(int size) {
     void *result = malloc(size);
     if (result == NULL) {
-        fprintf(stderr, "fatal malloc returns NULL\n");
+        fprintf(stderr, "fatal: malloc returns NULL\n");
         exit(1);
     }
     return result;
 }
 
-// The Gimple Garbage Collector.
-
-
-//===============================================================//
-// The Java Heap data structure.
-
-/*
-      ----------------------------------------------------
-      |                        |                         |
-      ----------------------------------------------------
-      ^\                      /^
-      | \<~~~~~~~ size ~~~~~>/ |
-    from                       to
- */
-struct JavaHeap {
-    int size;         // in bytes, note that this if for semi-heap size
-    void *from;       // the "from" space pointer
-    void *fromFree;   // the next "free" space in the from space
-    void *to;         // the "to" space pointer
-    void *toStart;    // "start" address in the "to" space
-    void *toNext;     // "next" free space pointer in the to space
+struct young_gen {
+    unsigned long size; // in bytes, both `from` and `to` heap have this size of space
+    void *from;
+    void *from_free;
+    void *to;
+    void *to_free;
+    void *to_scaned;
 };
 
-// The Java heap, which is initialized by the following
-// "heap_init" function.
-struct JavaHeap heap;
+#define PROMOTE_THRESHOLD 5
+// when a obj has being scanned for PROMOTE_THRESHOLD times
+// we promote it to old gen
 
-// Lab 4, exercise 10:
-// Given the heap size (in bytes), allocate a Java heap
-// in the C heap, initialize the relevant fields.
-void Tiger_heap_init (int heapSize) {
-    void *m1 = xmalloc(heapSize);
-    void *m2 = xmalloc(heapSize);
-    heap.size = heapSize;
-    heap.from = m1;
-    heap.fromFree = m1;
-    heap.to = m2;
-    heap.toStart = m2;//TODO what this field is for?
-    heap.toNext = m2;
+struct old_gen {
+    void *start;
+    void *free;
+    void *scaned; // used for move young_gen obj to old_gen
+    unsigned long size; // heap size
+    unsigned long available_size;
+    // at first we will mmap(2) a lot of memory, but we won't use them all
+    struct timeval last_major_collect_time; // record last time we did major collect
+    unsigned int times_of_seeing_unused_last_two_page;
+    // we keep track of times we seeing last two page unused, we this reach
+    // threshold we will `free` last two page;
+};
+
+#define MAJOR_COLLECT_TIME_INTERVAL_SEC_THRESHOLD 2
+// we won't do major collect too frequently
+
+#define FREE_TAIL_PAGE_THRESHOLD 2
+// when we see the last two page is unused for FREE_TAIL_PAGE_THRESHOLD times
+// we `free` them, but don't `free` head OLD_GEN_SIZE_IN_PAGE*page_size
+// in old heap
+
+int page_size; // this is used to record page size of running machine
+struct young_gen young_gen_heap;
+struct old_gen old_gen_heap;
+
+#define YOUNG_GEN_SIZE_IN_PAGE 2
+#define OLD_GEN_SIZE_IN_PAGE 8
+
+void Tiger_heap_init() {
+    page_size = getpagesize();
+    size_t young_gen_size = page_size*YOUNG_GEN_SIZE_IN_PAGE;
+    void *from = mmap(NULL, young_gen_size, PROT_READ|PROT_WRITE,
+                        MAP_ANON|MAP_PRIVATE, 0, 0);
+    void *to = mmap(NULL, young_gen_size, PROT_READ|PROT_WRITE,
+                        MAP_ANON|MAP_PRIVATE, 0, 0);
+    if (from == MAP_FAILED || to == MAP_FAILED) {
+        fprintf(stderr, "failed to initializing young gen heap\n");
+        exit(2);
+    }
+
+    memset(&young_gen_heap, 0, sizeof(struct young_gen));
+    young_gen_heap.size = young_gen_size;
+    young_gen_heap.from = from;
+    young_gen_heap.from_free = from;
+    young_gen_heap.to = to;
+    young_gen_heap.to_free = to;
+    young_gen_heap.to_scaned = to;
+
+    // initializing old gen heap
+    void *old_gen_start = NULL;
+    // get max size divisible by page_size
+    size_t size = ((size_t)4*1024*1024*1024-1) & (~((size_t)(page_size-1)));
+
+    /* *
+     * We're tring to get as much space as possible.
+     * Note, you're OS should support this kind of lazy
+     * allocation of memory, or you should curse the author
+     * of you're OS kernel.
+     */
+    for (; size > 0; size -= 2*page_size) {
+        old_gen_start = mmap(NULL, size, PROT_READ|PROT_WRITE,
+                            MAP_ANON|MAP_PRIVATE, 0, 0);
+        if (old_gen_start != MAP_FAILED)
+            break;
+    }
+    if (old_gen_start == MAP_FAILED ||
+            size < OLD_GEN_SIZE_IN_PAGE*page_size) {
+        fprintf(stderr, "failed to initializing old gen heap\n");
+        exit(3);
+    }
+    memset(&old_gen_heap, 0, sizeof(struct old_gen));
+    old_gen_heap.start = old_gen_start;
+    old_gen_heap.free = old_gen_start;
+    old_gen_heap.scaned = old_gen_start;
+    old_gen_heap.size = size;
+    size_t available_size = OLD_GEN_SIZE_IN_PAGE*page_size;
+    old_gen_heap.available_size = available_size;
+    int rv = madvise(((unsigned long)old_gen_start)+available_size,
+                size-available_size,
+                MADV_DONTNEED);
+    if (rv) {
+        perror("madvise");
+        exit(4);
+    }
+    log("info: allocated %lu in old heap", (unsigned long)size);
 }
 
 void *gc_frame_prev = NULL;
 
-//===============================================================//
-// The Gimple Garbage Collector
-
-/**
- * this struct is a litte heavy weight, but it's easy to implement
- * becuase we need to do BFS, so we will use a list to store the info
- * */
-struct node {
-    void **to_be_process;
-    struct node *next;
-};
-
-void append(struct node **head, struct node **tail, void **to_be_process) {
-    if (!(*((struct __tiger_obj_header **)to_be_process)))
-        return;
-    log("debug: in append add 0x%lx to to-do list, have content 0x%lx",
-            (unsigned long)to_be_process,
-            (unsigned long)(*((struct __tiger_obj_header **)to_be_process)));
-    struct node *new = (struct node *)xmalloc(sizeof(struct node));
-    new->to_be_process = to_be_process;
-    new->next = NULL;
-    if (!*head) {
-        *head = *tail = new;
-    } else {
-        (*tail)->next = new;
-        *tail = new;
-    }
-}
-
-void **pop(struct node **head, struct node **tail) {
-    if (!*head) {
-        fprintf(stderr, "fatal pop a NULL\n");
-        exit(2);
-    }
-    void **result = (*head)->to_be_process;
-    if (*head == *tail) {
-        free(*head);
-        *head = *tail = NULL;
-    } else {
-        struct node *p = *head;
-        *head = p->next;
-        free(p);
-    }
-    return result;
-}
-
-void swap(void **p1, void **p2) {
-    void *tmp;
-    memcpy(&tmp, p1, sizeof(void *));
-    memcpy(p1, p2, sizeof(void *));
-    memcpy(p2, &tmp, sizeof(void *));
-}
-
-/**
- * this function do the actual gc, it pop a pointer from list
- * and copy it from 'from' space to 'to' space, and change the
- * root pointer.
- * */
+// following is unmodified
 void forward(struct node **head, struct node **tail, void **p) {
     struct __tiger_obj_header **root;
     root = (struct __tiger_obj_header **)p;
@@ -241,8 +245,14 @@ void Tiger_gc() {
         }
         process_list(&head, &tail);
     }
-    swap(&heap.to, &heap.from);
-    swap(&heap.toNext, &heap.fromFree);
+    void *tmp;
+    tmp = heap.to;
+    heap.to = heap.from;
+    heap.from = tmp;
+
+    tmp = heap.toNext;
+    heap.toNext = heap.fromFree;
+    heap.fromFree = tmp;
     heap.toStart = heap.toNext = heap.to;
 
     long size_after_gc = heap.fromFree - heap.from;
@@ -253,44 +263,6 @@ void Tiger_gc() {
                     size_before_gc - size_after_gc);
 }
 
-//===============================================================//
-// Object Model And allocation
-
-
-// Lab 4: exercise 11:
-// "new" a new object, do necessary initializations, and
-// return the pointer (reference).
-/*    ----------------
-      | vptr      ---|----> (points to the virtual method table)
-      |--------------|
-      | isObjOrArray | (0: for normal objects)
-      |--------------|
-      | length       | (this field should be empty for normal objects)
-      |--------------|
-      | forwarding   |
-      |--------------|\
-p---->| v_0          | \
-      |--------------|  s
-      | ...          |  i
-      |--------------|  z
-      | v_{size-1}   | /e
-      ----------------/
-*/
-// Try to allocate an object in the "from" space of the Java
-// heap. Read Tiger book chapter 13.3 for details on the
-// allocation.
-// There are two cases to consider:
-//   1. If the "from" space has enough space to hold this object, then
-//      allocation succeeds, return the apropriate address (look at
-//      the above figure, be careful);
-//   2. if there is no enough space left in the "from" space, then
-//      you should call the function "Tiger_gc()" to collect garbages.
-//      and after the collection, there are still two sub-cases:
-//        a: if there is enough space, you can do allocations just as case 1;
-//        b: if there is still no enough space, you can just issue
-//           an error message ("OutOfMemory") and exit.
-//           (However, a production compiler will try to expand
-//           the Java heap.)
 void *Tiger_new(void *vtable, int size) {
     int times = 0;
     for (;; times++) {
@@ -319,40 +291,6 @@ void *Tiger_new(void *vtable, int size) {
     exit(7);
 }
 
-// "new" an array of size "length", do necessary
-// initializations. And each array comes with an
-// extra "header" storing the array length and other information.
-/*    ----------------
-      | vptr         | (this field should be empty for an array)
-      |--------------|
-      | isObjOrArray | (1: for array)
-      |--------------|
-      | length       |
-      |--------------|
-      | forwarding   |
-      |--------------|\
-p---->| e_0          | \
-      |--------------|  s
-      | ...          |  i
-      |--------------|  z
-      | e_{length-1} | /e
-      ----------------/
-*/
-// Try to allocate an array object in the "from" space of the Java
-// heap. Read Tiger book chapter 13.3 for details on the
-// allocation.
-// There are two cases to consider:
-//   1. If the "from" space has enough space to hold this array object, then
-//      allocation succeeds, return the apropriate address (look at
-//      the above figure, be careful);
-//   2. if there is no enough space left in the "from" space, then
-//      you should call the function "Tiger_gc()" to collect garbages.
-//      and after the collection, there are still two sub-cases:
-//        a: if there is enough space, you can do allocations just as case 1; 
-//        b: if there is still no enough space, you can just issue
-//           an error message ("OutOfMemory") and exit.
-//           (However, a production compiler will try to expand
-//           the Java heap.)
 struct __tiger_obj_header *Tiger_new_array(int length) {
     int times = 0;
     int size = length * sizeof(int) + sizeof(struct __tiger_obj_header);
