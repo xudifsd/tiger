@@ -166,7 +166,17 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.stm.Assign s) {
 		s.exp.accept(this);
-		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField, s.isLocal, s.type);
+		String tmpid = null;
+		if (s.isField
+				&& (s.type instanceof ast.type.IntArray ||
+						s.type instanceof ast.type.Class)) {
+			// for generational GC
+			tmpid = this.genId();
+			this.tmpVars.add(new codegen.C.dec.Dec(new codegen.C.type.Class(
+					s.type.toString()), tmpid));
+		}
+		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField, s.isLocal, s.type, tmpid);
+
 	}
 
 	@Override
@@ -175,7 +185,8 @@ public class TranslateVisitor implements ast.Visitor {
 		codegen.C.exp.T index = this.exp;
 		s.exp.accept(this);
 		codegen.C.exp.T exp = this.exp;
-		this.stm = new codegen.C.stm.AssignArray(s.id, index, exp, s.isField, s.isLocal);
+		this.stm = new codegen.C.stm.AssignArray(s.id, index, exp, s.isField,
+				s.isLocal);
 	}
 
 	@Override
@@ -217,7 +228,8 @@ public class TranslateVisitor implements ast.Visitor {
 	// type
 	@Override
 	public void visit(ast.type.Boolean t) {
-		this.type = new codegen.C.type.Int();//because C don't hava boolean type
+		this.type = new codegen.C.type.Int();// because C don't hava boolean
+												// type
 	}
 
 	@Override

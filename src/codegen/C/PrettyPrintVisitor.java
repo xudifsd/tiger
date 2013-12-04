@@ -171,16 +171,36 @@ public class PrettyPrintVisitor implements Visitor {
 	// statements
 	@Override
 	public void visit(codegen.C.stm.Assign s) {
-		if (s.isField)
-			this.say("this->");
-		else if (s.isLocal) {
-			if (s.type instanceof ast.type.IntArray
-					|| s.type instanceof ast.type.Class)
-				this.say("__gc_frame.");
+		if (s.isField
+				&& (s.type instanceof ast.type.IntArray ||
+						s.type instanceof ast.type.Class)) {
+			/* *
+			 * We generate a lot of code here, because we want to use
+			 * write_barrier() which required by generational GC. A lot of code
+			 * here is used to prevent side affect that may introduced by
+			 * s.exp.accept(this), because this.some = new Class() is also a
+			 * Assign, we don't want to repeat this side affect twice
+			 */
+			this.say("__gc_frame." + s.tmpid + " = ");
+			s.exp.accept(this);
+			this.sayln(";");
+
+			this.printSpaces();
+			this.sayln("this->" + s.id + " = __gc_frame." + s.tmpid + ";");
+			this.printSpaces();
+			this.sayln("write_barrier(this, " + "this->" + s.id + ");");
+		} else {
+			if (s.isField)
+				this.say("this->");
+			else if (s.isLocal) {
+				if (s.type instanceof ast.type.IntArray
+						|| s.type instanceof ast.type.Class)
+					this.say("__gc_frame.");
+			}
+			this.say(s.id + " = ");
+			s.exp.accept(this);
+			this.sayln(";");
 		}
-		this.say(s.id + " = ");
-		s.exp.accept(this);
-		this.sayln(";");
 	}
 
 	@Override
