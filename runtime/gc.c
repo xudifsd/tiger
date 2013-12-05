@@ -14,7 +14,7 @@
 #define GET_STACK_ARG_ADDRESS(base, index) (((void *)base)+(index)*sizeof(void *))
 #endif
 
-void log(const char *fmt, ...) {
+void write_log(const char *fmt, ...) {
     if (gcLog) {
         va_list args;
         va_start(args, fmt);
@@ -131,10 +131,67 @@ void Tiger_heap_init() {
         perror("madvise");
         exit(4);
     }
-    log("info: allocated %lu in old heap", (unsigned long)size);
+    write_log("info: allocated %lu in old heap", (unsigned long)size);
 }
 
-void *gc_frame_prev = NULL;
+static int in_range(void *target, void *start, unsigned long size) {
+    return (start < target && target < ((char *)start) + size)? 1: 0;
+}
+
+struct gc_frame_header  *gc_frame_prev = NULL;
+
+struct node {
+    void *old_obj;
+    void *young_obj;
+    struct node *next;
+};
+
+/* *
+ * This is a linked list, it's sorted by old_obj ascending.
+ * This is required by minor collect, because we need the
+ * root info from old generation, why we use linked list to
+ * store this info? Because there few old object have reference
+ * to new object, and linked list is the most liable data structure
+ * to implement.
+ * */
+struct node *root_from_old_gen = NULL;
+
+struct node *new_node(void *old_obj, void *young_obj, struct node *next) {
+    struct node *result;
+    result = malloc(sizeof(struct node));
+    result->old_obj = old_obj;
+    result->young_obj = young_obj;
+    result->next = next;
+    return result;
+}
+
+void add_to_barrier(void *old_obj, void *young_obj) {
+    struct node **p;
+    struct node *node;
+    node = root_from_old_gen;
+    p = &root_from_old_gen;
+    for (; node; p = &node->next, node = *p) {
+        if (old_obj < node->old_obj)
+            break;
+        /* *
+         * We can't simply discard node if old_obj is already existed,
+         * because there may be two field in old obj pointing to new_obj.
+         * we could ask runtime system to provide more info to let us
+         * detective this sitution, but this add too much overhead, so we
+         * simple let it have duplicate node in barrier. because this sitution
+         * is rare, and clean duplicate node during major collection
+         * */
+    }
+    *p = new_node(old_obj, young_obj, node);
+}
+
+void write_barrier(void *old_obj, void *young_obj) {
+    if (in_range(old_obj, old_gen_heap.start, old_gen_heap.available_size) &&
+            in_range(young_obj, young_gen_heap.from, young_gen_heap.size)) {
+        write_log("debug: write_barrier seen assigning reference of young gen 0x%lx to old gen 0x%lx", young_obj, old_obj);
+        add_to_barrier(old_obj, young_obj);
+    }
+}
 
 // following is unmodified
 void forward(struct node **head, struct node **tail, void **p) {
@@ -143,17 +200,17 @@ void forward(struct node **head, struct node **tail, void **p) {
     struct __tiger_obj_header *to_be_process = *root;
 
     if (to_be_process == NULL) {
-        log("fatal: 0x%lx to_be_process is NULL, this couldn't happen");
+        write_log("fatal: 0x%lx to_be_process is NULL, this couldn't happen");
         return;
     }
     if (to_be_process->__forwarding >= heap.to &&
             to_be_process->__forwarding < heap.toNext) {
         /* already being processed */
-        log("debug: 0x%lx 's content 0x%lx already being processed", (unsigned long)root, (unsigned long)to_be_process);
+        write_log("debug: 0x%lx 's content 0x%lx already being processed", (unsigned long)root, (unsigned long)to_be_process);
         *root = to_be_process->__forwarding;
         return;
     }
-    log("debug: processing 0x%lx have content 0x%lx", (unsigned long)root, (unsigned long)to_be_process);
+    write_log("debug: processing 0x%lx have content 0x%lx", (unsigned long)root, (unsigned long)to_be_process);
     long size = sizeof(struct __tiger_obj_header);
     struct vtable_header *vtable = (struct vtable_header *)to_be_process->__u.vptr;
     switch (to_be_process->__obj_or_array) {
@@ -181,7 +238,7 @@ void forward(struct node **head, struct node **tail, void **p) {
                 *c != '\0';
                 c++, index++) {
             if (*c == '1') {
-                log("debug: add 0x%lx to to-do list in the body of 0x%lx",
+                write_log("debug: add 0x%lx to to-do list in the body of 0x%lx",
                         (unsigned long)next + index*sizeof(void *),
                         (unsigned long)to_be_process);
                 append(head, tail, (void *)next + index*sizeof(void *));
@@ -223,21 +280,21 @@ void Tiger_gc() {
         if (stack_top->__arguments_gc_map != NULL) {
             char *p = stack_top->__arguments_gc_map;
             int index = 0;
-            log("debug: deallocating arguments, __arguments_gc_map is '%s'", stack_top->__arguments_gc_map);
+            write_log("debug: deallocating arguments, __arguments_gc_map is '%s'", stack_top->__arguments_gc_map);
             for (; *p != '\0'; p++, index++) {
                 if (*p == '1') {
-                    log("debug: using GET_STACK_ARG_ADDRESS of index %d", index);
+                    write_log("debug: using GET_STACK_ARG_ADDRESS of index %d", index);
                     append(&head, &tail, GET_STACK_ARG_ADDRESS(stack_top->__arguments_base_address, index));
                 }
             }
         }
         if (stack_top->__locals_gc_number != 0) {
-            log("debug: deallocating local, __locals_gc_number is %d", stack_top->__locals_gc_number);
+            write_log("debug: deallocating local, __locals_gc_number is %d", stack_top->__locals_gc_number);
             void **base = (void *)stack_top + sizeof(struct gc_frame_header);
             unsigned long index = 0;
             for (; index < stack_top->__locals_gc_number;
                     index++) {
-                log("debug: add 0x%lx to to-do list in local of index %ld",
+                write_log("debug: add 0x%lx to to-do list in local of index %ld",
                         (unsigned long)base+index*sizeof(void *),
                         index);
                 append(&head, &tail, (void *)base+index*sizeof(void *));
@@ -257,7 +314,7 @@ void Tiger_gc() {
 
     long size_after_gc = heap.fromFree - heap.from;
     gettimeofday(&end, NULL);
-    log("info: %d round of GC: %.5fs, collected %ld bytes",
+    write_log("info: %d round of GC: %.5fs, collected %ld bytes",
                     round,
                     get_time_diff(end, start),
                     size_before_gc - size_after_gc);
@@ -271,7 +328,7 @@ void *Tiger_new(void *vtable, int size) {
             if (times == 1)
                 break;
             else {
-                log("debug: having only %ld bytes remains when allocating %d bytes of obj", heap.fromFree - heap.from, size);
+                write_log("debug: having only %ld bytes remains when allocating %d bytes of obj", heap.fromFree - heap.from, size);
                 Tiger_gc();
                 continue;
             }
@@ -283,7 +340,7 @@ void *Tiger_new(void *vtable, int size) {
             memset(result, 0, size);
             result->__u.vptr = vtable;
             result->__obj_or_array = 0;//obj
-            log("debug: allocated 0x%lx obj of %d bytes", (unsigned long)result, size);
+            write_log("debug: allocated 0x%lx obj of %d bytes", (unsigned long)result, size);
             return result;
         }
     }
@@ -300,7 +357,7 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
             if (times == 1)
                 break;// out of memory
             else {
-                log("debug: having only %ld bytes remains when allocating %d bytes of array", heap.fromFree - heap.from, size);
+                write_log("debug: having only %ld bytes remains when allocating %d bytes of array", heap.fromFree - heap.from, size);
                 Tiger_gc();
                 continue;
             }
@@ -311,7 +368,7 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
             memset(result, 0, size);
             result->__u.length = length;
             result->__obj_or_array = 1;//array
-            log("debug: allocated 0x%lx array of %d bytes", (unsigned long)result, size);
+            write_log("debug: allocated 0x%lx array of %d bytes", (unsigned long)result, size);
             return result;
         }
     }
