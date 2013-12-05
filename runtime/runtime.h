@@ -76,7 +76,7 @@ extern void *gc_frame_prev;
 
 extern void write_barrier(void *old_obj, void *new_obj);
 extern void Tiger_main(long dummy);
-extern void *Tiger_new(void *vtable, int size);
+extern struct __tiger_obj_header *Tiger_new(void *vtable, int size);
 extern struct __tiger_obj_header *Tiger_new_array(int size);
 extern int System_out_println(int i);
 #endif /* RUNTIME_H */

@@ -34,6 +34,17 @@ void *xmalloc(int size) {
     return result;
 }
 
+void die(const char *fmt, ...) {
+    fprintf(stderr, "fatal: ");
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    fputc('\n', stderr);
+    fflush(stderr);
+    exit(1);
+}
+
 struct young_gen {
     unsigned long size; // in bytes, both `from` and `to` heap have this size of space
     void *from;
@@ -75,6 +86,10 @@ struct old_gen old_gen_heap;
 #define YOUNG_GEN_SIZE_IN_PAGE 2
 #define OLD_GEN_SIZE_IN_PAGE 8
 
+static unsigned long round_down_to_page_boundary(unsigned long size) {
+    return size & (~((unsigned long)(page_size-1)));
+}
+
 void Tiger_heap_init() {
     page_size = getpagesize();
     size_t young_gen_size = page_size*YOUNG_GEN_SIZE_IN_PAGE;
@@ -82,10 +97,8 @@ void Tiger_heap_init() {
                         MAP_ANON|MAP_PRIVATE, 0, 0);
     void *to = mmap(NULL, young_gen_size, PROT_READ|PROT_WRITE,
                         MAP_ANON|MAP_PRIVATE, 0, 0);
-    if (from == MAP_FAILED || to == MAP_FAILED) {
-        fprintf(stderr, "failed to initializing young gen heap\n");
-        exit(2);
-    }
+    if (from == MAP_FAILED || to == MAP_FAILED)
+        die("failed to initializing young gen heap");
 
     memset(&young_gen_heap, 0, sizeof(struct young_gen));
     young_gen_heap.size = young_gen_size;
@@ -99,6 +112,7 @@ void Tiger_heap_init() {
     void *old_gen_start = NULL;
     // get max size divisible by page_size
     size_t size = ((size_t)4*1024*1024*1024-1) & (~((size_t)(page_size-1)));
+    size_t size = round_down_to_page_boundary((size_t)4*1024*1024*1024-1);
 
     /* *
      * We're tring to get as much space as possible.
@@ -113,10 +127,9 @@ void Tiger_heap_init() {
             break;
     }
     if (old_gen_start == MAP_FAILED ||
-            size < OLD_GEN_SIZE_IN_PAGE*page_size) {
-        fprintf(stderr, "failed to initializing old gen heap\n");
-        exit(3);
-    }
+            size < OLD_GEN_SIZE_IN_PAGE*page_size)
+        die("failed to initializing old gen heap");
+
     memset(&old_gen_heap, 0, sizeof(struct old_gen));
     old_gen_heap.start = old_gen_start;
     old_gen_heap.free = old_gen_start;
@@ -193,6 +206,98 @@ void write_barrier(void *old_obj, void *young_obj) {
     }
 }
 
+/* *
+ * Return 1 for did major collect, 0 for didn't, because of time interval
+ * is too short since last time we did it.
+ * */
+int major_collect() {
+    return 0;
+}
+
+/* *
+ * Get some free space in old gen heap, if there are enough space, do nothing.
+ * If there're not, we trying to do major collect to get space, if it failed
+ * we then try to `allocate` some space, if this also failed, we are out of
+ * memory.
+ */
+void prepare_free_memory(unsigned long size) {
+    int tried_times;
+    for (tried_times = 0; tried_times < 2; tried_times++) {
+        unsigned long used;
+        unsigned long remaining;
+
+        used = (unsigned long)old_gen_heap.free - (unsigned long)old_gen_heap.start;
+        remaining = old_gen_heap.available_size - used;
+
+        if (remaining > size) {
+            /* there are enough memory in old_gen_heap */
+            return;
+        } else {
+            if (major_collect())
+                continue;
+            else if (old_gen_heap.available_size == old_gen_heap.size ||
+                    used + size > old_gen_heap.size)
+                break;
+            else {
+                unsigned long to_alloc;
+                to_alloc = round_down_to_page_boundary(size);
+                if (to_alloc != size)
+                    to_alloc += page_size;
+                if (madvise((char *)old_gen_heap.start + old_gen_heap.available_size,
+                            to_alloc, MADV_WILLNEED)) {
+                    die("failed in madvise when trying to allocate %ld bytes, start is 0x%lx, available_size is %ld, obj we trying to fit in old gen has %ld bytes",
+                            to_alloc,
+                            (unsigned long)old_gen_heap.start,
+                            old_gen_heap.available_size,
+                            size);
+                }
+                old_gen_heap.available_size += to_alloc;
+            }
+        }
+    }
+    die("OutOfMemory");
+}
+
+void *promote(void *addr, unsigned long size) {
+    write_log("debug: tring to promote 0x%lx obj of %d bytes to old gen", (unsigned long)addr, size);
+    prepare_free_memory(size);
+    //TODO we should do some align here
+    memcpy(old_gen_heap.free, addr, size);
+    void *result = old_gen_heap.free;
+    old_gen_heap.free = (char *)old_gen_heap.free + size;
+    return result;
+}
+
+struct __tiger_obj_header *alloc_obj_in_old_gen_heap(void *vtable, int size) {
+    prepare_free_memory(size);
+    struct __tiger_obj_header *result;
+    //TODO we should do some align here
+    result = (struct __tiger_obj_header *)old_gen_heap.free;
+    memset(result, 0, size);
+
+    result->__u.vptr = vtable;
+    old_gen_heap.free = (char *)old_gen_heap.free + size;
+
+    write_log("debug: allocated 0x%lx obj of %d bytes directly in old gen", (unsigned long)result, size);
+    return result;
+}
+
+struct __tiger_obj_header *alloc_array_in_old_gen_heap(int length) {
+    unsigned long size = length * sizeof(int) + sizeof(struct __tiger_obj_header);
+    prepare_free_memory(size);
+    struct __tiger_obj_header *result;
+    //TODO we should do some align here
+    result = (struct __tiger_obj_header *)old_gen_heap.free;
+    memset(result, 0, size);
+
+    result->__u.length = length;
+    SET_ARRAY_TYPE(result);
+    old_gen_heap.free = (char *)old_gen_heap.free + size;
+
+    write_log("debug: allocated 0x%lx array of %d bytes directly in old gen", (unsigned long)result, size);
+    return result;
+}
+
 // following is unmodified
 void forward(struct node **head, struct node **tail, void **p) {
     struct __tiger_obj_header **root;
@@ -259,7 +364,7 @@ double get_time_diff(struct timeval end, struct timeval start) {
     return end.tv_sec - start.tv_sec + (end.tv_usec/1000000.0 - start.tv_usec/1000000.0);
 }
 
-void Tiger_gc() {
+void minor_collect() {
     static int round = 0;
     struct timeval start, end;
     long size_before_gc;
@@ -270,7 +375,7 @@ void Tiger_gc() {
     struct node *tail = NULL;
 
     if (!gc_frame_prev) {
-        fprintf(stderr, "fatal no stack but Tiger_gc was called\n");
+        fprintf(stderr, "fatal no stack but minor_collect was called\n");
         exit(5);
     }
 
@@ -320,7 +425,7 @@ void Tiger_gc() {
                     size_before_gc - size_after_gc);
 }
 
-void *Tiger_new(void *vtable, int size) {
+struct __tiger_obj_header *Tiger_new(void *vtable, int size) {
     int times = 0;
     for (;; times++) {
         if (heap.fromFree + size > heap.from + heap.size) {
@@ -329,7 +434,7 @@ void *Tiger_new(void *vtable, int size) {
                 break;
             else {
                 write_log("debug: having only %ld bytes remains when allocating %d bytes of obj", heap.fromFree - heap.from, size);
-                Tiger_gc();
+                minor_collect();
                 continue;
             }
         } else {
@@ -358,7 +463,7 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
                 break;// out of memory
             else {
                 write_log("debug: having only %ld bytes remains when allocating %d bytes of array", heap.fromFree - heap.from, size);
-                Tiger_gc();
+                minor_collect();
                 continue;
             }
         } else {
