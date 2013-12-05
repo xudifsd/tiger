@@ -25,15 +25,6 @@ void write_log(const char *fmt, ...) {
     }
 }
 
-void *xmalloc(int size) {
-    void *result = malloc(size);
-    if (result == NULL) {
-        fprintf(stderr, "fatal: malloc returns NULL\n");
-        exit(1);
-    }
-    return result;
-}
-
 void die(const char *fmt, ...) {
     fprintf(stderr, "fatal: ");
     va_list args;
@@ -43,6 +34,13 @@ void die(const char *fmt, ...) {
     fputc('\n', stderr);
     fflush(stderr);
     exit(1);
+}
+
+void *xmalloc(int size) {
+    void *result = malloc(size);
+    if (result == NULL)
+        die("malloc returns NULL")
+    return result;
 }
 
 struct young_gen {
@@ -86,7 +84,7 @@ struct old_gen old_gen_heap;
 #define YOUNG_GEN_SIZE_IN_PAGE 2
 #define OLD_GEN_SIZE_IN_PAGE 8
 
-static unsigned long round_down_to_page_boundary(unsigned long size) {
+static inline unsigned long round_down_to_page_boundary(unsigned long size) {
     return size & (~((unsigned long)(page_size-1)));
 }
 
@@ -147,7 +145,7 @@ void Tiger_heap_init() {
     write_log("info: allocated %lu in old heap", (unsigned long)size);
 }
 
-static int in_range(void *target, void *start, unsigned long size) {
+static inline int in_range(void *target, void *start, unsigned long size) {
     return (start < target && target < ((char *)start) + size)? 1: 0;
 }
 
@@ -171,7 +169,7 @@ struct node *root_from_old_gen = NULL;
 
 struct node *new_node(void *old_obj, void *young_obj, struct node *next) {
     struct node *result;
-    result = malloc(sizeof(struct node));
+    result = xmalloc(sizeof(struct node));
     result->old_obj = old_obj;
     result->young_obj = young_obj;
     result->next = next;
