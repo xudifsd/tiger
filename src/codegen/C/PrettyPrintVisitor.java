@@ -546,7 +546,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.printSpaces();
 		this.sayln("struct " + c.id + "_vtable *vptr;");
 		this.printSpaces();
-		this.sayln("int __obj_or_array;//0 for obj 1 for array");
+		this.sayln("unsigned long times;");
 		this.printSpaces();
 		this.sayln("void *__forwarding;//used for gc");
 		for (codegen.C.Tuple t : c.decs) {

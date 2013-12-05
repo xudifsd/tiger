@@ -160,7 +160,7 @@ struct node {
  * This is a linked list, it's sorted by old_obj ascending.
  * This is required by minor collect, because we need the
  * root info from old generation, why we use linked list to
- * store this info? Because there few old object have reference
+ * store this info? Because there are few old object have reference
  * to new object, and linked list is the most liable data structure
  * to implement.
  * */
@@ -189,7 +189,7 @@ void add_to_barrier(void *old_obj, void *young_obj) {
          * we could ask runtime system to provide more info to let us
          * detective this sitution, but this add too much overhead, so we
          * simple let it have duplicate node in barrier. because this sitution
-         * is rare, and clean duplicate node during major collection
+         * is rare, and we will clean duplicate node during major collection
          * */
     }
     *p = new_node(old_obj, young_obj, node);
