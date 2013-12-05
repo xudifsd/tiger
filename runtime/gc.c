@@ -109,7 +109,6 @@ void Tiger_heap_init() {
     // initializing old gen heap
     void *old_gen_start = NULL;
     // get max size divisible by page_size
-    size_t size = ((size_t)4*1024*1024*1024-1) & (~((size_t)(page_size-1)));
     size_t size = round_down_to_page_boundary((size_t)4*1024*1024*1024-1);
 
     /* *
