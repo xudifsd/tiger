@@ -9,9 +9,9 @@
 #include "runtime.h"
 
 #ifdef __APPLE__
-#define GET_STACK_ARG_ADDRESS(base, index) (((void *)base)-(index)*sizeof(void *))
+#define GET_STACK_ARG_ADDRESS(base, index) (((char *)base)-(index)*sizeof(void *))
 #else
-#define GET_STACK_ARG_ADDRESS(base, index) (((void *)base)+(index)*sizeof(void *))
+#define GET_STACK_ARG_ADDRESS(base, index) (((char *)base)+(index)*sizeof(void *))
 #endif
 
 void write_log(const char *fmt, ...) {
@@ -200,6 +200,57 @@ void write_barrier(void *old_obj, void *young_obj) {
             in_range(young_obj, young_gen_heap.from, young_gen_heap.size)) {
         write_log("debug: write_barrier seen assigning reference of young gen 0x%lx to old gen 0x%lx", young_obj, old_obj);
         add_to_barrier(old_obj, young_obj);
+    }
+}
+
+typedef void (*travse_root_handler)(struct __tiger_obj_header **root);
+typedef void (*travse_root_callback)(void);
+
+/* *
+ * Because both minor collect and major collect need to travse the root,
+ * so we use this hight-level function to encapsulate this functionality,
+ * although this function only works when handler and callback have side
+ * effect. We may not need the callback in major collect, but the minor
+ * collect may need it, because minor collect will use BFS to travse root
+ * (why? because this will makes object that referenced by the same object
+ * close to each other, this is more cache friendly). So minor collect will
+ * register some function in callback and travse_root will call this
+ * callback whenever it had fed all the reference of same object to the
+ * handler.
+ * handler will never be NULL, but callback may be NULL.
+ * NOTE: The address we feed to handler may have content NULL.
+ * */
+void travse_root(travse_root_handler handler, travse_root_callback callback) {
+    struct gc_frame_header *stack_top = gc_frame_prev;
+    for (; stack_top;
+            stack_top = stack_top->__prev) {
+        if (stack_top->__arguments_gc_map != NULL) {
+            char *p = stack_top->__arguments_gc_map;
+            int index = 0;
+            write_log("debug: travsing arguments, __arguments_gc_map is '%s'", stack_top->__arguments_gc_map);
+            for (; *p != '\0'; p++, index++) {
+                if (*p == '1') {
+                    write_log("debug: using GET_STACK_ARG_ADDRESS of index %d", index);
+                    handler((struct __tiger_obj_header **)(GET_STACK_ARG_ADDRESS(stack_top->__arguments_base_address, index)));
+                }
+            }
+        }
+        if (callback)
+            callback();
+        if (stack_top->__locals_gc_number != 0) {
+            write_log("debug: travsing local, __locals_gc_number is %d", stack_top->__locals_gc_number);
+            char *base = (char *)stack_top + sizeof(struct gc_frame_header);
+            unsigned long index = 0;
+            for (; index < stack_top->__locals_gc_number;
+                    index++) {
+                write_log("debug: adding 0x%lx to to-do list in local of index %ld",
+                        base+index*sizeof(void *),
+                        index);
+                handler((struct __tiger_obj_header **)(base+index*sizeof(void *)));
+            }
+            if (callback)
+                callback();
+        }
     }
 }
 
