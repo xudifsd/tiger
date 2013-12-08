@@ -342,17 +342,43 @@ void update_forwarding_in_old_gen() {
     char *current;
     forwarding = current = old_gen_heap.start;
     unsigned long obj_size;
-    for (; current < (char *)old_gen_heap.start + old_gen_heap.available_size;
+    for (; current < (char *)old_gen_heap.free;
             current += obj_size) {
-        obj_size = get_obj_size((struct __tiger_obj_header *)current);
         struct __tiger_obj_header *obj_header;
         obj_header = (struct __tiger_obj_header *)current;
+        obj_size = get_obj_size(obj_header);
 
         if (IS_MARKED(obj_header)) {
             obj_header->__forwarding = forwarding;
             forwarding += obj_size;
         }
     }
+}
+
+void move_obj_in_old_gen() {
+    char *current;
+    current = old_gen_heap.start;
+    unsigned long obj_size;
+
+    // don't cause problem if all obj in old gen are dead
+    struct __tiger_obj_header *dest = (struct __tiger_obj_header *)old_gen_heap.free;
+
+    for (; current < (char *)old_gen_heap.free;
+            current += obj_size) {
+        struct __tiger_obj_header *obj_header;
+        obj_header = (struct __tiger_obj_header *)current;
+        obj_size = get_obj_size(obj_header);
+
+        if (obj_header->__forwarding) {
+            dest = (struct __tiger_obj_header *)obj_header->__forwarding;
+            if (obj_header->__forwarding != obj_header)
+                memcpy(dest, obj_header, obj_size);
+            UNMARK(dest);
+            dest->__forwarding = NULL;
+            dest = (struct __tiger_obj_header *)((char *)dest + obj_size);
+        }
+    }
+    old_gen_heap.free = dest;
 }
 
 typedef void (*travse_barrier_handler)(struct node *root);
@@ -420,7 +446,27 @@ int major_collect() {
         update_forwarding_in_old_gen();
         travse_root(unmark_and_fix_pointer, NULL);
         travse_barrier(fix_old_pointer_in_barrier, 1);
-        // FIXME move the obj in old gen heap and UNMARK and clear __forwarding
+        move_obj_in_old_gen();
+
+        unsigned long used, rounded_used;
+        used = (unsigned long)old_gen_heap.free - (unsigned long)old_gen_heap.start;
+        rounded_used = round_down_to_page_boundary(used);
+        if (used != rounded_used)
+            used += page_size;
+        if (used + 2*page_size <= old_gen_heap.available_size) {
+            if (++old_gen_heap.times_of_seeing_unused_last_two_page > FREE_TAIL_PAGE_THRESHOLD) {
+                int rv = madvise((char *)old_gen_heap.start+old_gen_heap.available_size-2*page_size,
+                            2*page_size,
+                            MADV_DONTNEED);
+                if (rv) {
+                    perror("madvise in major_collect");
+                    exit(4);
+                }
+                old_gen_heap.available_size -= 2*page_size;
+                old_gen_heap.times_of_seeing_unused_last_two_page = 0;
+            }
+        } else
+            old_gen_heap.times_of_seeing_unused_last_two_page = 0;
 
         gettimeofday(&now, NULL);
         old_gen_heap.last_major_collect_time = now;
@@ -479,7 +525,9 @@ void *promote(void *addr, unsigned long size) {
     prepare_free_memory(size);
     //TODO we should do some align here
     memcpy(old_gen_heap.free, addr, size);
-    void *result = old_gen_heap.free;
+    struct __tiger_obj_header *result = old_gen_heap.free;
+    UNMARK(result);
+    result->__forwarding = NULL;
     old_gen_heap.free = (char *)old_gen_heap.free + size;
     return result;
 }
