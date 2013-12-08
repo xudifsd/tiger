@@ -39,7 +39,7 @@ void die(const char *fmt, ...) {
 void *xmalloc(int size) {
     void *result = malloc(size);
     if (result == NULL)
-        die("malloc returns NULL")
+        die("malloc returns NULL");
     return result;
 }
 
@@ -134,7 +134,7 @@ void Tiger_heap_init() {
     old_gen_heap.size = size;
     size_t available_size = OLD_GEN_SIZE_IN_PAGE*page_size;
     old_gen_heap.available_size = available_size;
-    int rv = madvise(((unsigned long)old_gen_start)+available_size,
+    int rv = madvise(((char *)old_gen_start)+available_size,
                 size-available_size,
                 MADV_DONTNEED);
     if (rv) {
@@ -144,11 +144,17 @@ void Tiger_heap_init() {
     write_log("info: allocated %lu in old heap", (unsigned long)size);
 }
 
-static inline int in_range(void *target, void *start, unsigned long size) {
-    return (start < target && target < ((char *)start) + size)? 1: 0;
+static inline int in_young_gen(void *target) {
+    return (young_gen_heap.from  < target &&
+            (char *)target < ((char *)young_gen_heap.from) + young_gen_heap.size)? 1: 0;
 }
 
-struct gc_frame_header  *gc_frame_prev = NULL;
+static inline int in_old_gen(void *target) {
+    return (old_gen_heap.start  < target &&
+            (char *)target < ((char *)old_gen_heap.start) + old_gen_heap.available_size)? 1: 0;
+}
+
+struct gc_frame_header *gc_frame_prev = NULL;
 
 struct node {
     void *old_obj;
@@ -196,11 +202,30 @@ void add_to_barrier(void *old_obj, void *young_obj) {
 }
 
 void write_barrier(void *old_obj, void *young_obj) {
-    if (in_range(old_obj, old_gen_heap.start, old_gen_heap.available_size) &&
-            in_range(young_obj, young_gen_heap.from, young_gen_heap.size)) {
+    if (in_old_gen(old_obj) && in_young_gen(young_obj)) {
         write_log("debug: write_barrier seen assigning reference of young gen 0x%lx to old gen 0x%lx", young_obj, old_obj);
         add_to_barrier(old_obj, young_obj);
     }
+}
+
+static inline void inc_times(struct __tiger_obj_header *header) {
+    unsigned long top_two_bits = header->times & __TOPTWO_BITS_OF_UL;
+    unsigned long times = GET_TIMES(header);
+    header->times = (times+1) | top_two_bits;
+}
+
+static inline unsigned long get_obj_size(struct __tiger_obj_header *header) {
+    unsigned long result;
+    result = sizeof(struct __tiger_obj_header);
+    if (GET_TYPE(header)) {
+        // array
+        result += header->__u.length * sizeof(int);
+    } else {
+        // obj
+        struct vtable_header *vtable = header->__u.vptr;
+        result += strlen(vtable->__class_gc_map) * sizeof(void *);
+    }
+    return result;
 }
 
 typedef void (*travse_root_handler)(struct __tiger_obj_header **root);
@@ -254,12 +279,155 @@ void travse_root(travse_root_handler handler, travse_root_callback callback) {
     }
 }
 
+void mark_obj(struct __tiger_obj_header **root) {
+    if (!*root)
+        return;
+    struct __tiger_obj_header *header = *root;
+    if (IS_MARKED(header))
+        return;
+
+    MARK(header);
+
+    if (GET_TYPE(header))//array
+        return;
+
+    struct vtable_header *vptr;
+    vptr = header->__u.vptr;
+    char *next = (char *)header + sizeof(struct __tiger_obj_header);
+    const char *c;
+    int index;
+    // we also mark obj in young gen, because next time we meet
+    // them we could skip them
+    for (index = 0, c = vptr->__class_gc_map;
+            *c != '\0';
+            c++, index++) {
+        if (*c == '1')
+            mark_obj((struct __tiger_obj_header **)(next + index*sizeof(void *)));
+    }
+}
+
+void unmark_and_fix_pointer(struct __tiger_obj_header **root) {
+    if (!*root)
+        return;
+    struct __tiger_obj_header *header = *root;
+    if (!IS_MARKED(header))
+        return;
+
+    UNMARK(header);
+
+    // fix pointer
+    if (in_old_gen(header))
+        *root = header->__forwarding;
+
+    if (GET_TYPE(header))//array
+        return;
+
+    struct vtable_header *vptr;
+    vptr = header->__u.vptr;
+    char *next = (char *)header + sizeof(struct __tiger_obj_header);
+    const char *c;
+    int index;
+    // we also unmark obj in young gen, because next time we meet
+    // them we could skip them
+    for (index = 0, c = vptr->__class_gc_map;
+            *c != '\0';
+            c++, index++) {
+        if (*c == '1')
+            unmark_and_fix_pointer((struct __tiger_obj_header **)(next + index*sizeof(void *)));
+    }
+}
+
+void update_forwarding_in_old_gen() {
+    char *forwarding;
+    char *current;
+    forwarding = current = old_gen_heap.start;
+    unsigned long obj_size;
+    for (; current < (char *)old_gen_heap.start + old_gen_heap.available_size;
+            current += obj_size) {
+        obj_size = get_obj_size((struct __tiger_obj_header *)current);
+        struct __tiger_obj_header *obj_header;
+        obj_header = (struct __tiger_obj_header *)current;
+
+        if (IS_MARKED(obj_header)) {
+            obj_header->__forwarding = forwarding;
+            forwarding += obj_size;
+        }
+    }
+}
+
+typedef void (*travse_barrier_handler)(struct node *root);
+
+void travse_barrier(travse_barrier_handler handler, int remove_unmarked_node) {
+    struct node **p;
+    struct node *current;
+    struct node *prev = NULL;
+    p = &root_from_old_gen;
+    current = *p;
+    while (current) {
+        if ((remove_unmarked_node &&
+                    (!IS_MARKED(current->old_obj) ||
+                     !IS_MARKED(current->young_obj)))
+                ||
+                (prev &&
+                 prev->young_obj == current->young_obj &&
+                 prev->old_obj == current->old_obj)) {
+            /* *
+             * Remove unmarked or duplicate node.
+             * Because minor collect will not mark live object,
+             * in this case we shouldn't remove unmarked node
+             * */
+            *p = current->next;
+            free(current);
+            current = *p;
+        } else {
+            handler(current);
+
+            prev = current;
+            p = &current->next;
+            current = *p;
+        }
+    }
+}
+
+void fix_old_pointer_in_barrier(struct node *root) {
+    struct __tiger_obj_header *old;
+    old = root->old_obj;
+    root->old_obj = old->__forwarding;
+}
+
+static inline time_t get_time_diff_sec(struct timeval end, struct timeval start) {
+    return end.tv_sec - start.tv_sec;
+}
+
+static inline double get_time_diff_double(struct timeval end, struct timeval start) {
+    return end.tv_sec - start.tv_sec + (end.tv_usec/1000000.0 - start.tv_usec/1000000.0);
+}
+
 /* *
  * Return 1 for did major collect, 0 for didn't, because of time interval
  * is too short since last time we did it.
  * */
 int major_collect() {
-    return 0;
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
+    if (get_time_diff_sec(now, old_gen_heap.last_major_collect_time) > MAJOR_COLLECT_TIME_INTERVAL_SEC_THRESHOLD) {
+        struct timeval start;
+        gettimeofday(&start, NULL);
+
+        //do major collect
+        travse_root(mark_obj, NULL);
+        update_forwarding_in_old_gen();
+        travse_root(unmark_and_fix_pointer, NULL);
+        travse_barrier(fix_old_pointer_in_barrier, 1);
+        // FIXME move the obj in old gen heap and UNMARK and clear __forwarding
+
+        gettimeofday(&now, NULL);
+        old_gen_heap.last_major_collect_time = now;
+        write_log("debug: finished major collect used %.4f sec", get_time_diff_double(now, start));
+        return 1;
+    } else
+        return 0;
 }
 
 /* *
@@ -347,6 +515,7 @@ struct __tiger_obj_header *alloc_array_in_old_gen_heap(int length) {
 }
 
 // following is unmodified
+/*
 void forward(struct node **head, struct node **tail, void **p) {
     struct __tiger_obj_header **root;
     root = (struct __tiger_obj_header **)p;
@@ -358,7 +527,7 @@ void forward(struct node **head, struct node **tail, void **p) {
     }
     if (to_be_process->__forwarding >= heap.to &&
             to_be_process->__forwarding < heap.toNext) {
-        /* already being processed */
+        // already being processed
         write_log("debug: 0x%lx 's content 0x%lx already being processed", (unsigned long)root, (unsigned long)to_be_process);
         *root = to_be_process->__forwarding;
         return;
@@ -368,11 +537,11 @@ void forward(struct node **head, struct node **tail, void **p) {
     struct vtable_header *vtable = (struct vtable_header *)to_be_process->__u.vptr;
     switch (to_be_process->__obj_or_array) {
         case 0:
-            /* obj */
+            // obj
             size += strlen(vtable->__class_gc_map) * sizeof(void *); // TODO makes compiler to generate this info
             break;
         case 1:
-            /* array */
+            // array
             size += to_be_process->__u.length * sizeof(int);
             break;
         default:
@@ -383,7 +552,7 @@ void forward(struct node **head, struct node **tail, void **p) {
     *root = to_be_process->__forwarding = heap.toNext;
     heap.toNext += size;
     if (to_be_process->__obj_or_array == 0) {
-        /* obj */
+        // obj
         void **next = (void *)to_be_process + sizeof(struct __tiger_obj_header);
         const char *c;
         int index;
@@ -406,10 +575,6 @@ void process_list(struct node **head, struct node **tail) {
         void **to_be_process = pop(head, tail);
         forward(head, tail, to_be_process);
     }
-}
-
-double get_time_diff(struct timeval end, struct timeval start) {
-    return end.tv_sec - start.tv_sec + (end.tv_usec/1000000.0 - start.tv_usec/1000000.0);
 }
 
 void minor_collect() {
@@ -488,7 +653,7 @@ struct __tiger_obj_header *Tiger_new(void *vtable, int size) {
         } else {
             struct __tiger_obj_header *result;
             result = (struct __tiger_obj_header *)heap.fromFree;
-            /* TODO we should align it */
+            // TODO we should align it
             heap.fromFree += size;
             memset(result, 0, size);
             result->__u.vptr = vtable;
@@ -528,3 +693,4 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
     fprintf(stderr, "fatal: OutOfMemory\n");
     exit(7);
 }
+*/

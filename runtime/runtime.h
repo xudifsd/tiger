@@ -2,6 +2,8 @@
 #define RUNTIME_H
 #include <stdio.h>
 #include <string.h>
+#include "command-line.h"
+#include "control.h"
 
 struct vtable_header {
     const char *__class_gc_map;
@@ -43,26 +45,6 @@ struct __tiger_obj_header {
 #define IS_MARKED(addr) \
     ((((struct __tiger_obj_header *)(addr))->times & __SECONDMOST_BIT_OF_UL)?1ul:0ul)
 
-static inline void inc_times(struct __tiger_obj_header *header) {
-    unsigned long top_two_bits = header->times & __TOPTWO_BITS_OF_UL;
-    unsigned long times = GET_TIMES(header);
-    header->times = (times+1) | top_two_bits;
-}
-
-static inline unsigned long get_obj_size(struct __tiger_obj_header *header) {
-    unsigned long result;
-    result = sizeof(struct __tiger_obj_header);
-    if (GET_TYPE(header)) {
-        // array
-        result += header->__u.length * sizeof(int);
-    } else {
-        // obj
-        struct vtable_header *vtable = header->__u.vptr;
-        result += strlen(vtable->__class_gc_map) * sizeof(void *);
-    }
-    return result;
-}
-
 // all methods' gc-frame contains this header's field
 struct gc_frame_header {
     void *__prev;
@@ -72,7 +54,7 @@ struct gc_frame_header {
     /* specified fields of method, contains only reference */
 };
 
-extern void *gc_frame_prev;
+extern struct gc_frame_header *gc_frame_prev;
 
 extern void write_barrier(void *old_obj, void *new_obj);
 extern void Tiger_main(long dummy);
