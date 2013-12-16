@@ -145,16 +145,16 @@ void Tiger_heap_init() {
         perror("madvise");
         exit(4);
     }
-    write_log("info: allocated %lu in old heap", (unsigned long)size);
+    write_log("info: allocated %lu in old heap, old_gen_heap's range is from 0x%lx to 0x%lx", (unsigned long)size, (unsigned long)old_gen_heap.start, (unsigned long)add_pointer(old_gen_heap.start, old_gen_heap.available_size));
 }
 
 static inline int in_young_gen(void *target) {
-    return (young_gen_heap.from  < target &&
+    return (young_gen_heap.from  <= target &&
             target < add_pointer(young_gen_heap.from, young_gen_heap.size))? 1: 0;
 }
 
 static inline int in_old_gen(void *target) {
-    return (old_gen_heap.start  < target &&
+    return (old_gen_heap.start  <= target &&
             target < add_pointer(old_gen_heap.start, old_gen_heap.available_size))? 1: 0;
 }
 
@@ -265,10 +265,8 @@ void traverse_root(traverse_root_handler handler, traverse_root_callback callbac
         if (stack_top->__arguments_gc_map != NULL) {
             char *p = stack_top->__arguments_gc_map;
             int index = 0;
-            write_log("debug: traversing arguments, __arguments_gc_map is '%s'", stack_top->__arguments_gc_map);
             for (; *p != '\0'; p++, index++) {
                 if (*p == '1') {
-                    write_log("debug: using GET_STACK_ARG_ADDRESS of index %d", index);
                     handler((struct __tiger_obj_header **)(GET_STACK_ARG_ADDRESS(stack_top->__arguments_base_address, index)));
                 }
             }
@@ -276,14 +274,10 @@ void traverse_root(traverse_root_handler handler, traverse_root_callback callbac
         if (callback)
             callback();
         if (stack_top->__locals_gc_number != 0) {
-            write_log("debug: traversing local, __locals_gc_number is %d", stack_top->__locals_gc_number);
             char *base = add_pointer(stack_top, sizeof(struct gc_frame_header));
             unsigned long index = 0;
             for (; index < stack_top->__locals_gc_number;
                     index++) {
-                write_log("debug: adding 0x%lx to to-do list in local of index %ld",
-                        base+index*sizeof(void *),
-                        index);
                 handler((struct __tiger_obj_header **)(base+index*sizeof(void *)));
             }
             if (callback)
@@ -300,6 +294,7 @@ void mark_obj(struct __tiger_obj_header **root) {
         return;
 
     MARK(header);
+    write_log("debug: marked obj/array 0x%lx", header);
 
     if (GET_TYPE(header))//array
         return;
@@ -327,6 +322,7 @@ void unmark_and_fix_pointer(struct __tiger_obj_header **root) {
         return;
 
     UNMARK(header);
+    write_log("debug: unmarked obj/array 0x%lx", header);
 
     // fix pointer
     if (in_old_gen(header))
@@ -384,8 +380,10 @@ void move_obj_in_old_gen() {
 
         if (obj_header->__forwarding) {
             dest = (struct __tiger_obj_header *)obj_header->__forwarding;
-            if (obj_header->__forwarding != obj_header)
+            if (obj_header->__forwarding != obj_header) {
+                write_log("debug: in move_obj_in_old_gen, moving 0x%lx to 0x%lx", (unsigned long)obj_header, (unsigned long)dest);
                 memcpy(dest, obj_header, obj_size);
+            }
             UNMARK(dest);
             dest->__forwarding = NULL;
             dest = (struct __tiger_obj_header *)add_pointer(dest, obj_size);
@@ -453,10 +451,12 @@ static inline double get_time_diff_double(struct timeval end, struct timeval sta
  * is too short since last time we did it.
  * */
 int major_collect() {
+    write_log("debug: enter major_collect");
     struct timeval now;
     gettimeofday(&now, NULL);
 
     if (get_time_diff_sec(now, old_gen_heap.last_major_collect_time) > MAJOR_COLLECT_TIME_INTERVAL_SEC_THRESHOLD) {
+        write_log("debug: preparing to do real major_collect");
         struct timeval start;
         gettimeofday(&start, NULL);
 
@@ -474,6 +474,7 @@ int major_collect() {
             used += page_size;
         if (used + 2*page_size <= old_gen_heap.available_size) {
             if (++old_gen_heap.times_of_seeing_unused_last_two_page > FREE_TAIL_PAGE_THRESHOLD) {
+                write_log("seeing unused last two page for %u times, tring to free them", old_gen_heap.times_of_seeing_unused_last_two_page);
                 int rv = madvise(add_pointer(old_gen_heap.start, old_gen_heap.available_size-2*page_size),
                             2*page_size,
                             MADV_DONTNEED);
@@ -489,10 +490,12 @@ int major_collect() {
 
         gettimeofday(&now, NULL);
         old_gen_heap.last_major_collect_time = now;
-        write_log("debug: finished major collect used %.4f sec", get_time_diff_double(now, start));
+        write_log("info: finished major collect used %.4f sec", get_time_diff_double(now, start));
         return 1;
-    } else
+    } else {
+        write_log("debug: fake major_collect");
         return 0;
+    }
 }
 
 /* *
@@ -532,11 +535,17 @@ void prepare_free_memory(unsigned long size) {
                             old_gen_heap.available_size,
                             size);
                 }
+                write_log("grow old_gen_heap from %lu to %lu", old_gen_heap.available_size, old_gen_heap.available_size + to_alloc);
                 old_gen_heap.available_size += to_alloc;
+                return;
             }
         }
     }
-    die("OutOfMemory");
+    die("OutOfMemory, tring to allocate %lu byte obj/array failed, old_gen_heap.size is %lu, start is 0x%lx, available_size is %lu",
+            size,
+            (unsigned long)old_gen_heap.size,
+            (unsigned long)old_gen_heap.start,
+            (unsigned long)old_gen_heap.available_size);
 }
 
 void *promote(void *addr, unsigned long size) {
@@ -552,31 +561,43 @@ void *promote(void *addr, unsigned long size) {
 }
 
 void copy_obj(struct __tiger_obj_header **root) {
+    write_log("debug: in copy_obj root is 0x%lx, have content 0x%lx", (unsigned long)root, (unsigned long)*root);
     if(!*root)
         return;
 
     struct __tiger_obj_header *header = *root;
 
-    if (in_old_gen(header) || header->__forwarding)
+    if (in_old_gen(header))
         return;
+
+    if (header->__forwarding) {
+        *root = header->__forwarding;
+        return;
+    }
 
     inc_times(header);
 
     unsigned long size = get_obj_size(header);
-    if (header->times > PROMOTE_THRESHOLD)
+    if (GET_TIMES(header) > PROMOTE_THRESHOLD) {
         *root = promote(header, size);
-    else {
+        header->__forwarding = *root;
+        write_log("debug: in copy_obj promote 0x%lx to 0x%lx, and changing the content of 0x%lx to it", (unsigned long)header, (unsigned long)*root, (unsigned long)root);
+    } else {
+        write_log("debug: in copy_obj actually copy 0x%lx to 0x%lx", (unsigned long)header, (unsigned long)young_gen_heap.to_free);
         header->__forwarding = NULL;
         // makes obj->__forwarding == NULL in to region
         memcpy(young_gen_heap.to_free, header, size);
         header->__forwarding = young_gen_heap.to_free;
+        write_log("debug: before changing the *root, *root is 0x%lx, root is 0x%lx", *root, root);
         *root = (struct __tiger_obj_header *)young_gen_heap.to_free;
+        write_log("debug: after changing the *root, *root is 0x%lx, root is 0x%lx", *root, root);
         young_gen_heap.to_free = add_pointer(young_gen_heap.to_free, size);
     }
 }
 
 
 void fix_pointer(struct __tiger_obj_header *header) {
+    write_log("debug: in fix_pointer, we're tring to fix pointer in 0x%lx", header);
     if (GET_TYPE(header)) {
         // array
         return;
@@ -649,9 +670,12 @@ struct __tiger_obj_header *alloc_array_in_old_gen_heap(int length) {
 
 void minor_collect() {
     static int round = 0;
+    round++;
+    write_log("debug: enter minor_collect");
+
     struct timeval start, end;
-    long size_before_gc;
-    size_before_gc = young_gen_heap.from_free - young_gen_heap.from;
+    unsigned long size_before_gc;
+    size_before_gc = (unsigned long)young_gen_heap.from_free - (unsigned long)young_gen_heap.from;
     gettimeofday(&start, NULL);
     traverse_root(copy_obj, fix_pointer_in_to_and_old);
     traverse_barrier(fix_young_pointer_in_barrier, 0);
@@ -662,14 +686,16 @@ void minor_collect() {
     young_gen_heap.from = tmp;
 
     young_gen_heap.from_free = young_gen_heap.to_free;
-    young_gen_heap.to_free = tmp;
-    young_gen_heap.to_scanned = tmp;
+    young_gen_heap.to_free = young_gen_heap.to;
+    young_gen_heap.to_scanned = young_gen_heap.to;
 
     gettimeofday(&end, NULL);
-    long size_after_gc = young_gen_heap.from_free - young_gen_heap.from;
-    write_log("info: %d round of GC: %.5fs, collected %ld bytes",
+    unsigned long size_after_gc;
+    size_after_gc = (unsigned long)young_gen_heap.from_free - (unsigned long)young_gen_heap.from;
+    write_log("debug: size_before_gc is %lu, size_after_gc is %lu", size_before_gc, size_after_gc);
+    write_log("info: minor collect: %d round of GC: %.5fs, collected %lu bytes",
                     round,
-                    get_time_diff_sec(end, start),
+                    get_time_diff_double(end, start),
                     size_before_gc - size_after_gc);
 }
 
@@ -678,6 +704,8 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
     int size = length * sizeof(int) + sizeof(struct __tiger_obj_header);
     for (; times < 2; times++) {
         if (add_pointer(young_gen_heap.from_free, size) > add_pointer(young_gen_heap.from, young_gen_heap.size)) {
+            if (times == 1)
+                break;
             minor_collect();
         } else {
             struct __tiger_obj_header *result;
@@ -685,7 +713,8 @@ struct __tiger_obj_header *Tiger_new_array(int length) {
             young_gen_heap.from_free = add_pointer(young_gen_heap.from_free, size);
             memset(result, 0, size);
             result->__u.length = length;
-            write_log("debug: allocated Ox%lx array of %d bytes", (unsigned long)result, size);
+            SET_ARRAY_TYPE(result);
+            write_log("debug: allocated 0x%lx array of %d bytes", (unsigned long)result, size);
             return result;
         }
     }
@@ -697,6 +726,8 @@ struct __tiger_obj_header *Tiger_new(void *vtable, int size) {
     int times = 0;
     for (; times < 2; times++) {
         if (add_pointer(young_gen_heap.from_free, size) > add_pointer(young_gen_heap.from, young_gen_heap.size)) {
+            if (times == 1)
+                break;
             minor_collect();
         } else {
             struct __tiger_obj_header *result;
