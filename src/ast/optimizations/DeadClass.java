@@ -238,10 +238,10 @@ public class DeadClass implements ast.Visitor {
 		this.program = new ast.program.Program(p.mainClass, newClasses);
 
 		if (control.Control.isTracing("ast.DeadClass")) {
-			System.out.println("before optimization:");
+			System.out.println("before ast.DeadClass optimization:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
 			p.accept(pp);
-			System.out.println("after optimization:");
+			System.out.println("after ast.DeadClass optimization:");
 			this.program.accept(pp);
 		}
 	}

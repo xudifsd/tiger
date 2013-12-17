@@ -164,10 +164,10 @@ public class ConstFold implements ast.Visitor {
 		this.program = p;
 
 		if (control.Control.isTracing("ast.ConstFold")) {
-			System.out.println("before optimization:");
+			System.out.println("before ast.ConstFold optimization:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
 			p.accept(pp);
-			System.out.println("after optimization: we did Constant Folding in AlgSimp.java, so this will looks same");
+			System.out.println("after ast.ConstFold optimization: we did Constant Folding in AlgSimp.java, so this will looks same");
 			this.program.accept(pp);
 		}
 		return;

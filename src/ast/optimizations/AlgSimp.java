@@ -388,10 +388,10 @@ public class AlgSimp implements ast.Visitor {
 		this.program = new ast.program.Program(this.mainClass, this.classes);
 
 		if (control.Control.isTracing("ast.AlgSimp")) {
-			System.out.println("before optimization:");
+			System.out.println("before ast.AlgSimp optimization:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
 			p.accept(pp);
-			System.out.println("after optimization:");
+			System.out.println("after ast.AlgSimp optimization:");
 			this.program.accept(pp);
 		}
 	}
