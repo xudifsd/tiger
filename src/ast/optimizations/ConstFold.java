@@ -3,23 +3,12 @@ package ast.optimizations;
 // Constant folding optimizations on an AST.
 
 public class ConstFold implements ast.Visitor {
-	private ast.classs.T newClass;
-	private ast.mainClass.T mainClass;
 	public ast.program.T program;
 
 	public ConstFold() {
-		this.newClass = null;
-		this.mainClass = null;
 		this.program = null;
 	}
 
-	// //////////////////////////////////////////////////////
-	//
-	public String genId() {
-		return util.Temp.next();
-	}
-
-	// /////////////////////////////////////////////////////
 	// expressions
 	@Override
 	public void visit(ast.exp.Add e) {
@@ -171,14 +160,14 @@ public class ConstFold implements ast.Visitor {
 	@Override
 	public void visit(ast.program.Program p) {
 
-		// You should comment out this line of code:
+		// NOTE we did Constant Folding in AlgSimp.java so we just skip this
 		this.program = p;
 
 		if (control.Control.isTracing("ast.ConstFold")) {
 			System.out.println("before optimization:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
 			p.accept(pp);
-			System.out.println("after optimization:");
+			System.out.println("after optimization: we did Constant Folding in AlgSimp.java, so this will looks same");
 			this.program.accept(pp);
 		}
 		return;

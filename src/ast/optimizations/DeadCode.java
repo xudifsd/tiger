@@ -218,6 +218,7 @@ public class DeadCode implements ast.Visitor {
 	 * 2. if (true) stm1 else stm2 -> stm1
 	 * 3. while (false) stm ->
 	 * we don't handle unused method here
+	 * NOTE, we also did this in AlgSimp.java
 	 */
 	@Override
 	public void visit(ast.program.Program p) {

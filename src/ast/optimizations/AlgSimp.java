@@ -1,6 +1,5 @@
 package ast.optimizations;
 
-import ast.exp.True;
 
 // Algebraic simplification optimizations on an AST.
 
@@ -222,6 +221,10 @@ public class AlgSimp implements ast.Visitor {
 				|| (rightIsLiteralNum && rightLiteralNum == 0)) {
 			isLiteralNum = true;
 			this.exp = new ast.exp.Num(0, e.lineno);
+		} else if (leftIsLiteralNum && leftLiteralNum == 1) {
+			this.exp = right;
+		} else if (rightIsLiteralNum && rightLiteralNum == 1) {
+			this.exp = left;
 		} else {
 			isLiteralNum = false;
 			this.exp = new ast.exp.Times(left, right, e.lineno);
@@ -353,7 +356,26 @@ public class AlgSimp implements ast.Visitor {
 	}
 
 	/* *
-	 * We simplify following code: 1. a*0
+	 * Actually we not only did the Algebraic Simplification
+	 * but also Constant Folding, and also dead code elimination.
+	 *
+	 * we simplified following code:
+	 * 1. false && exp -> false
+	 * 2. (0 * exp) && (exp * 0) -> 0
+	 * 3. (1 * exp) && (exp * 1) -> exp
+	 * 4. (0 + exp) && (exp + 0) -> exp
+	 * 5. exp - 0 -> exp
+	 * 6. true && true -> true
+	 * 7. true && false -> false
+	 * 8. smallNum < bigNum -> true
+	 * 9. bigNum < smallNum -> false
+	 * 10. !true -> false
+	 * 11. !false -> true
+	 * 12. if (true) stm1 else stm2 -> stm1
+	 * 13. if (false) stm1 else stm2 -> stm2
+	 * 14. while (false) stm -> `empty`
+	 *
+	 * and we did it cascadely
 	 */
 	@Override
 	public void visit(ast.program.Program p) {
