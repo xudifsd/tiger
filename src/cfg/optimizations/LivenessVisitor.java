@@ -43,29 +43,29 @@ public class LivenessVisitor implements cfg.Visitor {
 
 	public LivenessVisitor()
   {
-    this.oneStmGen = new java.util.HashSet<>();
-    this.oneStmKill = new java.util.HashSet<>();
+    this.oneStmGen = new java.util.HashSet<String>();
+    this.oneStmKill = new java.util.HashSet<String>();
 
-    this.oneTransferGen = new java.util.HashSet<>();
-    this.oneTransferKill = new java.util.HashSet<>();
+    this.oneTransferGen = new java.util.HashSet<String>();
+    this.oneTransferKill = new java.util.HashSet<String>();
 
-    this.stmGen = new java.util.HashMap<>();
-    this.stmKill = new java.util.HashMap<>();
+    this.stmGen = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
+    this.stmKill = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
 
-    this.transferGen = new java.util.HashMap<>();
-    this.transferKill = new java.util.HashMap<>();
+    this.transferGen = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
+    this.transferKill = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
 
-    this.blockGen = new java.util.HashMap<>();
-    this.blockKill = new java.util.HashMap<>();
+    this.blockGen = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
+    this.blockKill = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
 
-    this.blockLiveIn = new java.util.HashMap<>();
-    this.blockLiveOut = new java.util.HashMap<>();
+    this.blockLiveIn = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
+    this.blockLiveOut = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
 
-    this.stmLiveIn = new java.util.HashMap<>();
-    this.stmLiveOut = new java.util.HashMap<>();
+    this.stmLiveIn = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
+    this.stmLiveOut = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
 
-    this.transferLiveIn = new java.util.HashMap<>();
-    this.transferLiveOut = new java.util.HashMap<>();
+    this.transferLiveIn = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
+    this.transferLiveOut = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
 
     this.kind = Liveness_Kind_t.None;
   }
@@ -76,28 +76,28 @@ public class LivenessVisitor implements cfg.Visitor {
 	private java.util.HashSet<String> getOneStmGenAndClear()
   {
     java.util.HashSet<String> temp = this.oneStmGen;
-    this.oneStmGen = new java.util.HashSet<>();
+    this.oneStmGen = new java.util.HashSet<String>();
     return temp;
   }
 
 	private java.util.HashSet<String> getOneStmKillAndClear()
   {
     java.util.HashSet<String> temp = this.oneStmKill;
-    this.oneStmKill = new java.util.HashSet<>();
+    this.oneStmKill = new java.util.HashSet<String>();
     return temp;
   }
 
 	private java.util.HashSet<String> getOneTransferGenAndClear()
   {
     java.util.HashSet<String> temp = this.oneTransferGen;
-    this.oneTransferGen = new java.util.HashSet<>();
+    this.oneTransferGen = new java.util.HashSet<String>();
     return temp;
   }
 
 	private java.util.HashSet<String> getOneTransferKillAndClear()
   {
     java.util.HashSet<String> temp = this.oneTransferKill;
-    this.oneTransferKill = new java.util.HashSet<>();
+    this.oneTransferKill = new java.util.HashSet<String>();
     return temp;
   }
 
@@ -223,8 +223,8 @@ public class LivenessVisitor implements cfg.Visitor {
 	private void calculateStmTransferGenKill(cfg.block.Block b)
   {
     for (cfg.stm.T s : b.stms) {
-      this.oneStmGen = new java.util.HashSet<>();
-      this.oneStmKill = new java.util.HashSet<>();      
+      this.oneStmGen = new java.util.HashSet<String>();
+      this.oneStmKill = new java.util.HashSet<String>();      
       s.accept(this);
       this.stmGen.put(s, this.oneStmGen);
       this.stmKill.put(s, this.oneStmKill);
@@ -241,8 +241,8 @@ public class LivenessVisitor implements cfg.Visitor {
         }
       }
     }
-    this.oneTransferGen = new java.util.HashSet<>();
-    this.oneTransferKill = new java.util.HashSet<>();
+    this.oneTransferGen = new java.util.HashSet<String>();
+    this.oneTransferKill = new java.util.HashSet<String>();
     b.transfer.accept(this);
     this.transferGen.put(b.transfer, this.oneTransferGen);
     this.transferKill.put(b.transfer, this.oneTransferGen);

@@ -31,6 +31,8 @@ public class Control {
 	// code generator
 	public static String outputName = null;
 
+	public static boolean auto = false;
+
 	public enum Codegen_Kind_t {
 		Bytecode, C, Dalvik, X86
 	}

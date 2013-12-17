@@ -1,0 +1,54 @@
+# gc support
+
+we now support copy collection garbage collection algorithm, the main code
+is under runtime/gc.c
+
+## ATTENTION
+
+mac osx\'s clang and linux\'s gcc layout stack differently.
+
+In mac\'s clang, stack layout like following:
+
+---------------------------------------------------> low address
+| this | arg1 | arg2 | arg3 | ret | ebp |  locals?
+----------------------------------------------------
+
+whereas in linux\'s gcc, stack layout like following:
+
+---------------------------------------------------> low address
+| arg3 | arg2 | arg1 | this | ret | ebp |  locals?
+----------------------------------------------------
+
+our code got this situation covered.
+
+# for codegen option
+
+## compile to C programming language
+
+use
+
+    $ java Tiger -codegen C T.java
+
+the program will compile to C and generate C file under "/tmp/" (so this won't work in Windows system, only after you changed the path in codegen.C.PrettyPrintVisitor.java).
+
+if you want compile to executable directly you could use following command:
+
+    $ java Tiger -codegen C T.java -auto
+
+## compile to java byte code
+
+use
+
+    $ java Tiger -codegen bytecode T.java
+
+and it will generate some *.j file in your current working directory, then
+compile *.j into class file using:
+
+    $ java -jar ../jasmin.jar *.j
+
+this will generate *.class file in your current working directory, run the
+program using
+
+    $ java Main
+
+replace Main with your class with main method.

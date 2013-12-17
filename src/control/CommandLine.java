@@ -180,7 +180,13 @@ public class CommandLine {
 							output();
 							System.exit(1);
 						}
-						return;
+					}
+				}), new Arg<Object>("auto", null,
+				"whether or not generate runnable file directly", Kind.Empty,
+				new F<Object>() {
+					@Override
+					public void f(Object s) {
+						Control.auto = true;
 					}
 				}));
 	}

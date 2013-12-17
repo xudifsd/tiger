@@ -36,7 +36,6 @@ public class Tiger {
 	}
 
 	public void compile(String fname) {
-
 		// /////////////////////////////////////////////////////
 		// to test the pretty printer on the "test/Fac.java" program
 		if (control.Control.testFac) {
@@ -235,7 +234,6 @@ public class Tiger {
 		default:
 			break;
 		}
-
 		return;
 	}
 
@@ -277,6 +275,5 @@ public class Tiger {
 		control.CompilerPass tigerAll = new control.CompilerPass("Tiger",
 				tiger, fname);
 		tigerAll.doitName("compileAndLink");
-		return;
 	}
 }

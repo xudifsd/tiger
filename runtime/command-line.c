@@ -4,10 +4,10 @@
 #include "control.h"
 #include "command-line.h"
 
-static void errorNoName (char *);
-static void errorWrongArg (char *, char *, char *);
+static void errorNoName(char *);
+static void errorWrongArg(char *, char *, char *);
 
-typedef enum{
+typedef enum {
   ARGTYPE_BOOL,
   ARGTYPE_EMPTY, // expects no argument
   ARGTYPE_INT,
@@ -18,10 +18,11 @@ typedef enum{
 /*        all functions */
 
 
-static void Arg_setHeapSize(int heapSize)
-{
-  Control_heapSize = heapSize;
-  return;
+static void Arg_setGcLog(int doLog) {
+    if (doLog) {
+        gcLog = 1;
+        gc_log_output = fopen("/tmp/gc.log", "w");
+    }
 }
 
 /* Typically, a commandline argument take the form of:
@@ -32,8 +33,7 @@ static void Arg_setHeapSize(int heapSize)
 
  * the following data structure defines this.
  */
-struct Arg_t
-{
+struct Arg_t {
   char *name;     // argument name
   char *arg;      // argument (for displaying)
   char *desc;     // argument description
@@ -43,11 +43,11 @@ struct Arg_t
 
 /* all available arguments */
 static struct Arg_t allArgs[] = {
-  {"heapSize", 
-   "<n>", 
-   "set the Java heap size (in kilobytes)",
-   ARGTYPE_INT,
-   Arg_setHeapSize},
+  {"gcLog",
+   "<true|false>",
+   "ouput gc log to debug or not",
+   ARGTYPE_BOOL,
+   Arg_setGcLog},
   {0,
    0,
    0,
@@ -94,7 +94,7 @@ static void errorNoName (char *s)
   exit (0);
 }
 
-static void errorNoArg (char *name, 
+static void errorNoArg (char *name,
                         char *arg)
 {
   printf ("no argument is given to switch: %s\n"
@@ -117,36 +117,36 @@ static void errorWrongArg (char *name,
 void CommandLine_doarg (int argc, char **argv)
 {
   int index = 0;
-  
+
   // scan all input command-line arguments
   while (index<argc){
     if (strcmp(argv[index++], "@tiger")==0)
       break;
   }
-  for (index=0; index<argc; ){
+  while (index < argc){
     char *inputName = argv[index++];
     // If a string starts with '@', then
     // treat it as a terminator.
-    if ('@' != inputName[0]){
+    if ('@' == inputName[0]){
       break;
     }
-    
+
     // this is a potential argument
     int i = 0;
     for (; allArgs[i].action; i++){
       if (strcmp(inputName+1, allArgs[i].name)!=0){
         continue;
       }
-      
+
       switch (allArgs[i].argtype){
       case ARGTYPE_BOOL:{
         int b;
         char *arg;
-        
+
         if (index>=argc)
           errorNoArg (allArgs[i].name,
                       allArgs[i].arg);
-        
+
         arg = argv[index++];
         if (strcmp(arg, "true")==0)
           b = 1;
@@ -161,11 +161,11 @@ void CommandLine_doarg (int argc, char **argv)
       case ARGTYPE_INT:{
         int result;
         char *arg;
-        
+
         if (index>=argc)
           errorNoArg (allArgs[i].name,
                       allArgs[i].arg);
-        
+
         arg = argv[index++];
         result = atoi (arg);
         allArgs[i].action (result);
@@ -173,21 +173,21 @@ void CommandLine_doarg (int argc, char **argv)
       }
       case ARGTYPE_STRING:{
         char *arg;
-        
+
         if (index>=argc)
           errorNoArg (allArgs[i].name,
                       allArgs[i].arg);
-        
-        arg = argv[index++];         
+
+        arg = argv[index++];
         allArgs[i].action (arg);
         break;
       }
-      case ARGTYPE_EMPTY:{       
+      case ARGTYPE_EMPTY:{
         allArgs[i].action ();
         break;
-      }         
+      }
       default:{
-      	printf ("%s\n", "impossible");
+        printf ("%s\n", "impossible");
         exit(0);
         break;
       }

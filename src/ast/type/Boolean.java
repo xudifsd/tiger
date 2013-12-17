@@ -3,7 +3,10 @@ package ast.type;
 import ast.Visitor;
 
 public class Boolean extends T {
-	public Boolean() {
+	public int lineno;
+
+	public Boolean(int lineno) {
+		this.lineno = lineno;
 	}
 
 	@Override

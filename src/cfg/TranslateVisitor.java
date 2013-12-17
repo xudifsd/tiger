@@ -254,13 +254,11 @@ public class TranslateVisitor implements codegen.C.Visitor {
 	@Override
   public void visit(codegen.C.vtable.Vtable v)
   {
-    java.util.LinkedList<cfg.Ftuple> newTuples 
-    = new java.util.LinkedList<cfg.Ftuple>();
+    java.util.LinkedList<cfg.Ftuple> newTuples = new java.util.LinkedList<cfg.Ftuple>();
     for (codegen.C.Ftuple t : v.ms) {
       t.ret.accept(this);
       cfg.type.T ret = this.type;
-      java.util.LinkedList<cfg.dec.T> args
-      = new java.util.LinkedList<>();
+      java.util.LinkedList<cfg.dec.T> args = new java.util.LinkedList<cfg.dec.T>();
       for (codegen.C.dec.T dec: t.args){
         dec.accept(this);
         args.add(this.dec);
@@ -287,7 +285,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 	@Override
   public void visit(codegen.C.method.Method m)
   {
-    this.newLocals = new java.util.LinkedList<>();
+    this.newLocals = new java.util.LinkedList<cfg.dec.T>();
 
     m.retType.accept(this);
     cfg.type.T retType = this.type;
@@ -308,19 +306,19 @@ public class TranslateVisitor implements codegen.C.Visitor {
     util.Label entry = new util.Label();
     this.entry = entry;
     emit (entry);
-    
+
     for (codegen.C.stm.T s : m.stms)
       s.accept(this);
-    
+
     m.retExp.accept(this);
     emit (new cfg.transfer.Return(this.operand));
 
     //
     java.util.LinkedList<cfg.block.T> blocks = cookBlocks();
-    
+
     for (cfg.dec.T d: this.newLocals)
       locals.add(d);
-    
+
     this.method = new cfg.method.Method(retType, m.id, m.classId, newFormals,
         locals, blocks, entry, null, null);
     return;
@@ -330,21 +328,21 @@ public class TranslateVisitor implements codegen.C.Visitor {
 	@Override
   public void visit(codegen.C.mainMethod.MainMethod m)
   {
-    this.newLocals = new java.util.LinkedList<>();
-    
+    this.newLocals = new java.util.LinkedList<cfg.dec.T>();
+
     java.util.LinkedList<cfg.dec.T> locals = new java.util.LinkedList<cfg.dec.T>();
     for (codegen.C.dec.T c : m.locals) {
       c.accept(this);
       locals.add(this.dec);
     }
-    
+
     util.Label entry = new util.Label();
     emit (entry);
-    
+
     m.stm.accept(this);
-    
+
     emit (new cfg.transfer.Return(new cfg.operand.Int(0)));
-    
+
     java.util.LinkedList<cfg.block.T> blocks = cookBlocks();
     for (cfg.dec.T d: this.newLocals)
       locals.add(d);

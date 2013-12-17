@@ -35,29 +35,29 @@ public class ReachingDefinition implements cfg.Visitor {
 
 	public ReachingDefinition()
   {
-    this.oneStmGen = new java.util.HashSet<>();
-    this.oneStmKill = new java.util.HashSet<>();
+    this.oneStmGen = new java.util.HashSet<cfg.stm.T>();
+    this.oneStmKill = new java.util.HashSet<cfg.stm.T>();
 
-    this.oneTransferGen = new java.util.HashSet<>();
-    this.oneTransferKill = new java.util.HashSet<>();
+    this.oneTransferGen = new java.util.HashSet<cfg.stm.T>();
+    this.oneTransferKill = new java.util.HashSet<cfg.stm.T>();
 
-    this.stmGen = new java.util.HashMap<>();
-    this.stmKill = new java.util.HashMap<>();
+    this.stmGen = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
+    this.stmKill = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
 
-    this.transferGen = new java.util.HashMap<>();
-    this.transferKill = new java.util.HashMap<>();
+    this.transferGen = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<cfg.stm.T>>();
+    this.transferKill = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<cfg.stm.T>>();
 
-    this.blockGen = new java.util.HashMap<>();
-    this.blockKill = new java.util.HashMap<>();
+    this.blockGen = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
+    this.blockKill = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
 
-    this.blockIn = new java.util.HashMap<>();
-    this.blockOut = new java.util.HashMap<>();
+    this.blockIn = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
+    this.blockOut = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
 
-    this.stmIn = new java.util.HashMap<>();
-    this.stmOut = new java.util.HashMap<>();
+    this.stmIn = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
+    this.stmOut = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
 
-    this.transferIn = new java.util.HashMap<>();
-    this.transferOut = new java.util.HashMap<>();
+    this.transferIn = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<cfg.stm.T>>();
+    this.transferOut = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<cfg.stm.T>>();
   }
 
 	// /////////////////////////////////////////////////////

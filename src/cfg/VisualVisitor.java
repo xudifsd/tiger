@@ -197,10 +197,9 @@ public class VisualVisitor implements Visitor {
       util.Label label = b.label;
       map.put(label, b);
     }
-    
-    util.Graph<cfg.block.T> graph
-    = new util.Graph<>("Tiger_main");
-    
+
+    util.Graph<cfg.block.T> graph = new util.Graph<cfg.block.T>("Tiger_main");
+
     for(cfg.block.T block : m.blocks) {
       graph.addNode(block);
     }

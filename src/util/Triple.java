@@ -1,5 +1,6 @@
 package util;
 
+@SuppressWarnings("unchecked")
 public class Triple<X, Y, Z> {
 	public X x;
 	public Y y;
