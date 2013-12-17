@@ -206,13 +206,13 @@ public class Tiger {
 			codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
 			control.CompilerPass genCCodePass = new control.CompilerPass(
 					"C code generation", theAst, transC);
-			genCCodePass.doit();
+			//genCCodePass.doit();
 			codegen.C.program.T cAst = transC.program;
 
 			codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
 			control.CompilerPass ppCCodePass = new control.CompilerPass(
 					"C code printing", cAst, ppc);
-			ppCCodePass.doit();
+			//ppCCodePass.doit();
 			break;
 		case Dalvik:
 			codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();

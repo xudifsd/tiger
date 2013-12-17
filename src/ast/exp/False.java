@@ -1,7 +1,7 @@
 package ast.exp;
 
 public class False extends T {
-	int lineno;
+	public int lineno;
 	public False(int lineno) {
 		this.lineno = lineno;
 	}
