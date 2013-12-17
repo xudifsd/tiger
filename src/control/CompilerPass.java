@@ -48,6 +48,10 @@ public class CompilerPass {
 				if (methods[i].getName().equals("accept"))
 					break;
 			}
+			if (i == methods.length) {
+				System.out.format("couldn't found method %s in obj %s and pass '%s'\n", name, this.obj, this.name);
+				System.exit(2);
+			}
 			methods[i].invoke(this.obj, this.x);
 		} catch (Throwable o) {
 			System.out.println("compiler bug");
@@ -87,6 +91,10 @@ public class CompilerPass {
 			for (i = 0; i < methods.length; i++) {
 				if (methods[i].getName().equals(name))
 					break;
+			}
+			if (i == methods.length) {
+				System.out.format("couldn't found method %s in obj %s and pass is '%s'\n", name, this.obj, this.name);
+				System.exit(2);
 			}
 			methods[i].invoke(this.obj, this.x);
 		} catch (Throwable o) {

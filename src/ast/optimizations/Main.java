@@ -3,7 +3,7 @@ package ast.optimizations;
 public class Main {
 	public ast.program.T program;
 
-	public void accept(ast.program.T ast) {
+	public void optimize(ast.program.T ast) {
 		DeadClass dceVisitor = new DeadClass();
 		control.CompilerPass deadClassPass = new control.CompilerPass(
 				"Dead class elimination", ast, dceVisitor);
@@ -41,7 +41,5 @@ public class Main {
 		}
 
 		program = ast;
-
-		return;
 	}
 }

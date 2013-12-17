@@ -18,7 +18,7 @@ public class Tiger {
 	public ast.program.T theAst;
 
 	// lex and parse
-	private void lexAndParse(String fname) {
+	public void lexAndParse(String fname) {
 		Parser parser;
 
 		try {
@@ -32,7 +32,6 @@ public class Tiger {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		return;
 	}
 
 	public void compile(String fname) {
@@ -56,7 +55,7 @@ public class Tiger {
 			ast.optimizations.Main optAstPasses = new ast.optimizations.Main();
 			control.CompilerPass optAstPass = new control.CompilerPass(
 					"Optimizing AST", optAstPasses, ast.Fac.prog);
-			optAstPass.doit();
+			optAstPass.doitName("optimize");
 			ast.Fac.prog = (ast.program.Program) optAstPasses.program;
 
 			// Compile this program to C.
@@ -163,7 +162,6 @@ public class Tiger {
 
 		// /////////////////////////////////////////////////////////
 		// normal compilation phases.
-		ast.program.T theAst = null;
 
 		control.CompilerPass lexAndParsePass = new control.CompilerPass(
 				"Lex and parse", tiger, fname);
@@ -187,7 +185,7 @@ public class Tiger {
 		ast.optimizations.Main optAstPasses = new ast.optimizations.Main();
 		control.CompilerPass optAstPass = new control.CompilerPass(
 				"Optimizing the AST", optAstPasses, theAst);
-		optAstPass.doitName("doit");
+		optAstPass.doitName("optimize");
 		theAst = optAstPasses.program;
 
 		// code generation
@@ -234,7 +232,6 @@ public class Tiger {
 		default:
 			break;
 		}
-		return;
 	}
 
 	public void assemble(String str) {
@@ -260,8 +257,6 @@ public class Tiger {
 		control.CompilerPass linkPass = new control.CompilerPass("Linking",
 				tiger, fname);
 		linkPass.doitName("link");
-
-		return;
 	}
 
 	public static void main(String[] args) {
