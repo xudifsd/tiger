@@ -2,219 +2,185 @@ package ast.optimizations;
 
 // Dead code elimination optimizations on an AST.
 
-public class DeadCode implements ast.Visitor
-{
-  private ast.classs.T newClass;
-  private ast.mainClass.T mainClass;
-  public ast.program.T program;
-  
-  public DeadCode()
-  {
-    this.newClass = null;
-    this.mainClass = null;
-    this.program = null;
-  }
+public class DeadCode implements ast.Visitor {
+	private ast.classs.T newClass;
+	private ast.mainClass.T mainClass;
+	public ast.program.T program;
 
-  // //////////////////////////////////////////////////////
-  // 
-  public String genId()
-  {
-    return util.Temp.next();
-  }
+	public DeadCode() {
+		this.newClass = null;
+		this.mainClass = null;
+		this.program = null;
+	}
 
-  // /////////////////////////////////////////////////////
-  // expressions
-  @Override
-  public void visit(ast.exp.Add e)
-  {
-  }
+	// //////////////////////////////////////////////////////
+	//
+	public String genId() {
+		return util.Temp.next();
+	}
 
-  @Override
-  public void visit(ast.exp.And e)
-  {
-  }
+	// /////////////////////////////////////////////////////
+	// expressions
+	@Override
+	public void visit(ast.exp.Add e) {
+	}
 
-  @Override
-  public void visit(ast.exp.ArraySelect e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.And e) {
+	}
 
-  @Override
-  public void visit(ast.exp.Call e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.ArraySelect e) {
+	}
 
-  @Override
-  public void visit(ast.exp.False e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.Call e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Id e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.False e) {
+	}
 
-  @Override
-  public void visit(ast.exp.Length e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.Id e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Lt e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.Length e) {
+	}
 
-  @Override
-  public void visit(ast.exp.NewIntArray e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.Lt e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.NewObject e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.NewIntArray e) {
+	}
 
-  @Override
-  public void visit(ast.exp.Not e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.NewObject e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Num e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.Not e) {
+	}
 
-  @Override
-  public void visit(ast.exp.Sub e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.Num e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.This e)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.exp.Sub e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Times e)
-  {
-    
-    return;
-  }
+	@Override
+	public void visit(ast.exp.This e) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.True e)
-  {
-  }
+	@Override
+	public void visit(ast.exp.Times e) {
 
-  // statements
-  @Override
-  public void visit(ast.stm.Assign s)
-  {
-    
-    return;
-  }
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.AssignArray s)
-  {
-  }
+	@Override
+	public void visit(ast.exp.True e) {
+	}
 
-  @Override
-  public void visit(ast.stm.Block s)
-  {
-  }
+	// statements
+	@Override
+	public void visit(ast.stm.Assign s) {
 
-  @Override
-  public void visit(ast.stm.If s)
-  {
-   
-    return;
-  }
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.Print s)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.stm.AssignArray s) {
+	}
 
-  @Override
-  public void visit(ast.stm.While s)
-  {
-  }
+	@Override
+	public void visit(ast.stm.Block s) {
+	}
 
-  // type
-  @Override
-  public void visit(ast.type.Boolean t)
-  {
-  }
+	@Override
+	public void visit(ast.stm.If s) {
 
-  @Override
-  public void visit(ast.type.Class t)
-  {
-  }
+		return;
+	}
 
-  @Override
-  public void visit(ast.type.Int t)
-  {
-  }
+	@Override
+	public void visit(ast.stm.Print s) {
+		return;
+	}
 
-  @Override
-  public void visit(ast.type.IntArray t)
-  {
-  }
+	@Override
+	public void visit(ast.stm.While s) {
+	}
 
-  // dec
-  @Override
-  public void visit(ast.dec.Dec d)
-  {
-    return;
-  }
+	// type
+	@Override
+	public void visit(ast.type.Boolean t) {
+	}
 
-  // method
-  @Override
-  public void visit(ast.method.Method m)
-  {
-    return;
-  }
+	@Override
+	public void visit(ast.type.Class t) {
+	}
 
-  // class
-  @Override
-  public void visit(ast.classs.Class c)
-  {
-    
-    return;
-  }
+	@Override
+	public void visit(ast.type.Int t) {
+	}
 
-  // main class
-  @Override
-  public void visit(ast.mainClass.MainClass c)
-  {
-    
-    return;
-  }
+	@Override
+	public void visit(ast.type.IntArray t) {
+	}
 
-  // program
-  @Override
-  public void visit(ast.program.Program p)
-  {
-    
- // You should comment out this line of code:
-    this.program = p;
+	// dec
+	@Override
+	public void visit(ast.dec.Dec d) {
+		return;
+	}
 
-    if (control.Control.trace.equals("ast.DeadCode")){
-      System.out.println("before optimization:");
-      ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-      p.accept(pp);
-      System.out.println("after optimization:");
-      this.program.accept(pp);
-    }
-    return;
-  }
+	// method
+	@Override
+	public void visit(ast.method.Method m) {
+		return;
+	}
+
+	// class
+	@Override
+	public void visit(ast.classs.Class c) {
+
+		return;
+	}
+
+	// main class
+	@Override
+	public void visit(ast.mainClass.MainClass c) {
+
+		return;
+	}
+
+	// program
+	@Override
+	public void visit(ast.program.Program p) {
+
+		// You should comment out this line of code:
+		this.program = p;
+
+		if (control.Control.trace.equals("ast.DeadCode")) {
+			System.out.println("before optimization:");
+			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
+			p.accept(pp);
+			System.out.println("after optimization:");
+			this.program.accept(pp);
+		}
+		return;
+	}
 }

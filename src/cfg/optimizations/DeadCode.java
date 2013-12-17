@@ -1,139 +1,114 @@
 package cfg.optimizations;
 
-public class DeadCode implements cfg.Visitor
-{
-  public cfg.program.T program;
-  
-  public DeadCode()
-  {
-    this.program = null;
-  } 
+public class DeadCode implements cfg.Visitor {
+	public cfg.program.T program;
 
-  // /////////////////////////////////////////////////////
-  // operand
-  @Override
-  public void visit(cfg.operand.Int operand)
-  {
-  }
+	public DeadCode() {
+		this.program = null;
+	}
 
-  @Override
-  public void visit(cfg.operand.Var operand)
-  {
-  }
+	// /////////////////////////////////////////////////////
+	// operand
+	@Override
+	public void visit(cfg.operand.Int operand) {
+	}
 
-  // statements
-  @Override
-  public void visit(cfg.stm.Add s)
-  {
-  }
+	@Override
+	public void visit(cfg.operand.Var operand) {
+	}
 
-  @Override
-  public void visit(cfg.stm.InvokeVirtual s)
-  {
-  }
+	// statements
+	@Override
+	public void visit(cfg.stm.Add s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.Lt s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.InvokeVirtual s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.Move s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.Lt s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.NewObject s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.Move s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.Print s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.NewObject s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.Sub s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.Print s) {
+	}
 
-  @Override
-  public void visit(cfg.stm.Times s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.Sub s) {
+	}
 
-  // transfer
-  @Override
-  public void visit(cfg.transfer.If s)
-  {
-  }
+	@Override
+	public void visit(cfg.stm.Times s) {
+	}
 
-  @Override
-  public void visit(cfg.transfer.Goto s)
-  {
-  }
+	// transfer
+	@Override
+	public void visit(cfg.transfer.If s) {
+	}
 
-  @Override
-  public void visit(cfg.transfer.Return s)
-  {
-  }
+	@Override
+	public void visit(cfg.transfer.Goto s) {
+	}
 
-  // type
-  @Override
-  public void visit(cfg.type.Class t)
-  {
-  }
+	@Override
+	public void visit(cfg.transfer.Return s) {
+	}
 
-  @Override
-  public void visit(cfg.type.Int t)
-  {
-  }
+	// type
+	@Override
+	public void visit(cfg.type.Class t) {
+	}
 
-  @Override
-  public void visit(cfg.type.IntArray t)
-  {
-  }
+	@Override
+	public void visit(cfg.type.Int t) {
+	}
 
-  // dec
-  @Override
-  public void visit(cfg.dec.Dec d)
-  {
-  }
+	@Override
+	public void visit(cfg.type.IntArray t) {
+	}
 
-  // block
-  @Override
-  public void visit(cfg.block.Block b)
-  {
-  }
+	// dec
+	@Override
+	public void visit(cfg.dec.Dec d) {
+	}
 
-  // method
-  @Override
-  public void visit(cfg.method.Method m)
-  {
-  }
+	// block
+	@Override
+	public void visit(cfg.block.Block b) {
+	}
 
-  @Override
-  public void visit(cfg.mainMethod.MainMethod m)
-  {
-  }
+	// method
+	@Override
+	public void visit(cfg.method.Method m) {
+	}
 
-  // vtables
-  @Override
-  public void visit(cfg.vtable.Vtable v)
-  {
-  }
+	@Override
+	public void visit(cfg.mainMethod.MainMethod m) {
+	}
 
-  // class
-  @Override
-  public void visit(cfg.classs.Class c)
-  {
-  }
+	// vtables
+	@Override
+	public void visit(cfg.vtable.Vtable v) {
+	}
 
-  // program
-  @Override
-  public void visit(cfg.program.Program p)
-  {
-    this.program = p;
-  }
+	// class
+	@Override
+	public void visit(cfg.classs.Class c) {
+	}
+
+	// program
+	@Override
+	public void visit(cfg.program.Program p) {
+		this.program = p;
+	}
 
 }
