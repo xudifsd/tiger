@@ -168,14 +168,18 @@ public class TranslateVisitor implements ast.Visitor {
 		s.exp.accept(this);
 		String tmpid = null;
 		if (s.isField
-				&& (s.type instanceof ast.type.IntArray ||
-						s.type instanceof ast.type.Class)) {
+				&& (s.type instanceof ast.type.IntArray || s.type instanceof ast.type.Class)) {
 			// for generational GC
 			tmpid = this.genId();
-			this.tmpVars.add(new codegen.C.dec.Dec(new codegen.C.type.Class(
-					s.type.toString()), tmpid));
+			if (s.type instanceof ast.type.Class)
+				this.tmpVars.add(new codegen.C.dec.Dec(
+						new codegen.C.type.Class(s.type.toString()), tmpid));
+			else
+				this.tmpVars.add(new codegen.C.dec.Dec(
+						new codegen.C.type.IntArray(), tmpid));
 		}
-		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField, s.isLocal, s.type, tmpid);
+		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField,
+				s.isLocal, s.type, tmpid);
 
 	}
 
