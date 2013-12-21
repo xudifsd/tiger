@@ -38,9 +38,7 @@ public class Dot {
 	}
 
 	public void insert(String from, String to, String info) {
-
 		String s = "[label=\"" + info + "\"]";
-		// System.out.println(s);
 		this.list.addFirst(new DotElement<String, String, String>(from, to, s));
 	}
 
@@ -64,7 +62,7 @@ public class Dot {
 			BufferedWriter w = new BufferedWriter(fw);
 
 			StringBuffer sb = new StringBuffer();
-			sb.append("digraph g{\n");
+			sb.append("digraph g {\n");
 			sb.append("\tsize = \"10, 10\";\n");
 			sb.append("\tnode [color=lightblue2, style=filled];\n");
 
@@ -130,7 +128,6 @@ public class Dot {
 						e.printStackTrace();
 					}
 				}
-
 			}
 			Process process = Runtime.getRuntime().exec(args);
 			new Thread(new StreamDrainer(process.getInputStream())).start();

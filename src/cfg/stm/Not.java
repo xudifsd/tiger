@@ -2,13 +2,13 @@ package cfg.stm;
 
 import cfg.Visitor;
 
-public class Move extends T {
+public class Not extends T {
 	public String dst;
-	public cfg.operand.T src;
+	public cfg.operand.T exp;
 
-	public Move(String dst, cfg.operand.T src) {
+	public Not(String dst, cfg.operand.T exp) {
 		this.dst = dst;
-		this.src = src;
+		this.exp = exp;
 	}
 
 	@Override
@@ -18,6 +18,6 @@ public class Move extends T {
 
 	@Override
 	public String toString() {
-		return dst + " = " + src;
+		return dst + " = " + " !(" + exp + ")";
 	}
 }

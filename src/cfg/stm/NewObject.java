@@ -16,4 +16,9 @@ public class NewObject extends T {
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
+
+	@Override
+	public String toString() {
+		return dst + " = new " + c + "()";
+	}
 }

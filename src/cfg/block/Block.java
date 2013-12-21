@@ -30,9 +30,27 @@ public class Block extends T {
 	public String toString() {
 		StringBuffer strb = new StringBuffer();
 		strb.append(this.label.toString() + ":\\n");
-		// Lab5. Your code here:
-		strb.append("Your code here:\\n");
-
+		for (cfg.stm.T stm: stms) {
+			strb.append(stm);
+			strb.append("\\n");
+		}
+		if (transfer instanceof cfg.transfer.Goto) {
+			strb.append("Goto ");
+			strb.append(((cfg.transfer.Goto) transfer).label);
+		} else if (transfer instanceof cfg.transfer.If) {
+			strb.append("if ");
+			strb.append(((cfg.transfer.If) transfer).operand);
+			strb.append(" goto ");
+			strb.append(((cfg.transfer.If) transfer).truee);
+			strb.append(" else goto ");
+			strb.append(((cfg.transfer.If) transfer).falsee);
+		} else if (transfer instanceof cfg.transfer.Return) {
+			strb.append("return ");
+			strb.append(((cfg.transfer.Return) transfer).operand);
+		} else {
+			throw new RuntimeException("unknow transfer type " + transfer);
+		}
+		strb.append("\\n");
 		return strb.toString();
 	}
 

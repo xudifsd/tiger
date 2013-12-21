@@ -13,6 +13,8 @@ public interface Visitor {
 
 	public void visit(cfg.type.IntArray t);
 
+	public void visit(cfg.type.Boolean boolean1);
+
 	// dec
 	public void visit(cfg.dec.Dec d);
 
@@ -40,6 +42,16 @@ public interface Visitor {
 
 	public void visit(cfg.stm.Times m);
 
+	public void visit(cfg.stm.And and);
+
+	public void visit(cfg.stm.ArraySelect arraySelect);
+
+	public void visit(cfg.stm.Length length);
+
+	public void visit(cfg.stm.NewIntArray newIntArray);
+
+	public void visit(cfg.stm.Not not);
+
 	// block
 	public void visit(cfg.block.Block b);
 
@@ -57,4 +69,7 @@ public interface Visitor {
 
 	// program
 	public void visit(cfg.program.Program p);
+
+	// stm created by xudifsd
+	public void visit(cfg.stm.AssignArray assignArray);
 }

@@ -2,3 +2,9 @@ bin/*
 /bin
 *.o
 *.class
+*.dot
+*.bmp
+*.pdf
+*.ps
+*.jpg
+test/*.c

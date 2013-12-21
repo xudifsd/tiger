@@ -2,12 +2,12 @@ package cfg.stm;
 
 import cfg.Visitor;
 
-public class Add extends T {
+public class And extends T {
 	public String dst;
 	public cfg.operand.T left;
 	public cfg.operand.T right;
 
-	public Add(String dst, cfg.operand.T left,
+	public And(String dst, cfg.operand.T left,
 			cfg.operand.T right) {
 		this.dst = dst;
 		this.left = left;
@@ -21,6 +21,6 @@ public class Add extends T {
 
 	@Override
 	public String toString() {
-		return dst + " = " + left + " + " + right;
+		return dst + " = " + left + " && " + right;
 	}
 }

@@ -124,6 +124,30 @@ public class PrettyPrintVisitor implements Visitor {
 		return;
 	}
 
+	@Override
+	public void visit(cfg.stm.And and) {
+	}
+
+	@Override
+	public void visit(cfg.stm.ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Length length) {
+	}
+
+	@Override
+	public void visit(cfg.stm.NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Not not) {
+	}
+
+	@Override
+	public void visit(cfg.stm.AssignArray assignArray) {
+	}
+
 	// transfer
 	@Override
 	public void visit(cfg.transfer.If s) {
@@ -169,6 +193,10 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(cfg.type.IntArray t) {
+	}
+
+	@Override
+	public void visit(cfg.type.Boolean boolean1) {
 	}
 
 	// dec
@@ -346,5 +374,4 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 
 	}
-
 }

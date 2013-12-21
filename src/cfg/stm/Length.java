@@ -2,13 +2,13 @@ package cfg.stm;
 
 import cfg.Visitor;
 
-public class Move extends T {
+public class Length extends T {
 	public String dst;
-	public cfg.operand.T src;
+	public cfg.operand.T array;
 
-	public Move(String dst, cfg.operand.T src) {
+	public Length(String dst, cfg.operand.T array) {
 		this.dst = dst;
-		this.src = src;
+		this.array = array;
 	}
 
 	@Override
@@ -18,6 +18,6 @@ public class Move extends T {
 
 	@Override
 	public String toString() {
-		return dst + " = " + src;
+		return dst + " = " + array + ".length";
 	}
 }
