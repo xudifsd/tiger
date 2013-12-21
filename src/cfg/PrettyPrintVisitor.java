@@ -78,12 +78,20 @@ public class PrettyPrintVisitor implements Visitor {
 				|| s.retType instanceof cfg.type.IntArray)
 			this.say("__gc_frame.");
 		this.say(s.dst + " = ");
-		if (!s.obj.equals("this"))
+
+		if (!s.obj.equals("this") && !s.isField)
 			this.say("__gc_frame.");
+		else if (s.isField)
+			this.say("this->");
+
 		this.say(s.obj);
 		this.say("->vptr->" + s.f + "(");
-		if (!s.obj.equals("this"))
+
+		if (!s.obj.equals("this") && !s.isField)
 			this.say("__gc_frame.");
+		else if (s.isField)
+			this.say("this->");
+
 		this.say(s.obj);
 		for (cfg.operand.T x : s.args) {
 			this.say(", ");

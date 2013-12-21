@@ -6,7 +6,7 @@ do
     classname="${filename%.*}"
     dir=`dirname $i`
     java -cp bin Tiger $i
-    clang /tmp/$filename.c runtime/runtime.c -I runtime
+    gcc /tmp/$filename.c runtime/runtime.c -I runtime
     ./a.out > /tmp/a
 
     javac $i

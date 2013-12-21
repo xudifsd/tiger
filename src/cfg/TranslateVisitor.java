@@ -163,7 +163,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 			x.accept(this);
 			newArgs.add(this.operand);
 		}
-		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs, retType));
+		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs, retType, ((cfg.operand.Var)objOp).isField));
 		this.operand = new cfg.operand.Var(dst, retType, false, true);
 	}
 
