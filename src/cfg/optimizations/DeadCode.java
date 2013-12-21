@@ -1,5 +1,13 @@
 package cfg.optimizations;
 
+import cfg.stm.And;
+import cfg.stm.ArraySelect;
+import cfg.stm.AssignArray;
+import cfg.stm.Length;
+import cfg.stm.NewIntArray;
+import cfg.stm.Not;
+import cfg.type.Boolean;
+
 public class DeadCode implements cfg.Visitor {
 	public cfg.program.T program;
 
@@ -50,6 +58,30 @@ public class DeadCode implements cfg.Visitor {
 	public void visit(cfg.stm.Times s) {
 	}
 
+	@Override
+	public void visit(And and) {
+	}
+
+	@Override
+	public void visit(ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(Length length) {
+	}
+
+	@Override
+	public void visit(NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(Not not) {
+	}
+
+	@Override
+	public void visit(AssignArray assignArray) {
+	}
+
 	// transfer
 	@Override
 	public void visit(cfg.transfer.If s) {
@@ -74,6 +106,10 @@ public class DeadCode implements cfg.Visitor {
 
 	@Override
 	public void visit(cfg.type.IntArray t) {
+	}
+
+	@Override
+	public void visit(Boolean boolean1) {
 	}
 
 	// dec
@@ -110,5 +146,4 @@ public class DeadCode implements cfg.Visitor {
 	public void visit(cfg.program.Program p) {
 		this.program = p;
 	}
-
 }

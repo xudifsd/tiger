@@ -57,7 +57,7 @@ struct gc_frame_header {
 extern struct gc_frame_header *gc_frame_prev;
 
 extern void write_barrier(void *old_obj, void *new_obj);
-extern void Tiger_main(long dummy);
+extern int Tiger_main(long dummy);
 extern struct __tiger_obj_header *Tiger_new(void *vtable, int size);
 extern struct __tiger_obj_header *Tiger_new_array(int size);
 extern int System_out_println(int i);

@@ -18,6 +18,7 @@ class Test {
         i = 0;
         a = aa.allocate(1000);
         b = aa.allocate(1000);
+        result = 0;
 
         // increase times of a and b
         while (i < 6) {

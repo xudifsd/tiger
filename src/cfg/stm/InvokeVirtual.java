@@ -8,13 +8,15 @@ public class InvokeVirtual extends T {
 	public String f;
 	// type of the destination variable
 	public java.util.LinkedList<cfg.operand.T> args;
+	public cfg.type.T retType;
 
 	public InvokeVirtual(String dst, String obj, String f,
-			java.util.LinkedList<cfg.operand.T> args) {
+			java.util.LinkedList<cfg.operand.T> args, cfg.type.T retType) {
 		this.dst = dst;
 		this.obj = obj;
 		this.f = f;
 		this.args = args;
+		this.retType = retType;
 	}
 
 	@Override

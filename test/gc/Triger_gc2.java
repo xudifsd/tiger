@@ -2,7 +2,7 @@
 // $ java Tiger -codegen C -auot ../test/Triger_gc2.java
 // and run it using
 // $ ./a.out @tiger -heapSize 1400 -gcLog true @
-class T {
+class Triger_gc2 {
     public static void main(String[] args) {
         System.out.println(new Test().foo(3));
     }

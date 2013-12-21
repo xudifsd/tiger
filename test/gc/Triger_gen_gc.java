@@ -1,4 +1,4 @@
-class T {
+class Triger_gen_gc {
     public static void main(String[] args) {
         System.out.println(new Starter().start());
     }

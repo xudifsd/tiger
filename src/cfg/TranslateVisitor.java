@@ -1,5 +1,7 @@
 package cfg;
 
+import cfg.type.IntArray;
+
 // Traverse the C AST, and generate
 // a control-flow graph.
 public class TranslateVisitor implements codegen.C.Visitor {
@@ -47,7 +49,8 @@ public class TranslateVisitor implements codegen.C.Visitor {
 				new util.Error();
 			}
 			label = (util.Label) this.labelOrStmOrTransfer.get(i++);
-			while (i < size && this.labelOrStmOrTransfer.get(i) instanceof cfg.stm.T) {
+			while (i < size
+					&& this.labelOrStmOrTransfer.get(i) instanceof cfg.stm.T) {
 				stms.add((cfg.stm.T) this.labelOrStmOrTransfer.get(i++));
 			}
 
@@ -57,10 +60,12 @@ public class TranslateVisitor implements codegen.C.Visitor {
 				b = new cfg.block.Block(label, stms, transfer);
 				blocks.add(b);
 			} else if (o instanceof util.Label) {
-				b = new cfg.block.Block(label, stms, new cfg.transfer.Goto((util.Label)o));
+				b = new cfg.block.Block(label, stms, new cfg.transfer.Goto(
+						(util.Label) o));
 				blocks.add(b);
 			} else {
-				throw new RuntimeException("Unknow type in labelOrStmOrTransfer");
+				throw new RuntimeException(
+						"Unknow type in labelOrStmOrTransfer");
 			}
 		}
 		this.labelOrStmOrTransfer = new java.util.ArrayList<Object>();
@@ -95,7 +100,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.right.accept(this);
 		cfg.operand.T right = this.operand;
 		emit(new cfg.stm.Add(dst, left, right));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Int(), false, true);
 	}
 
 	@Override
@@ -106,7 +111,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.right.accept(this);
 		cfg.operand.T right = this.operand;
 		emit(new cfg.stm.And(dst, left, right));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
 	}
 
 	@Override
@@ -117,13 +122,32 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.index.accept(this);
 		cfg.operand.T index = this.operand;
 		emit(new cfg.stm.ArraySelect(dst, array, index));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Int(), false, true);
 	}
 
 	@Override
 	public void visit(codegen.C.exp.Call e) {
+		/*
+		this.say("(__gc_frame." + e.assign + "=");
+		e.exp.accept(this);
+		this.say(", ");
+		this.say("__gc_frame." + e.assign + "->vptr->" + e.id + "("
+				+ "__gc_frame." + e.assign);
+		int size = e.args.size();
+		if (size == 0) {
+			this.say("))");
+			return;
+		}
+		for (codegen.C.exp.T x : e.args) {
+			this.say(", ");
+			x.accept(this);
+		}
+		this.say("))");
+		*/
+
 		e.retType.accept(this);
-		String dst = genVar(this.type);
+		cfg.type.T retType = this.type;
+		String dst = genVar(retType);
 		String obj = null;
 		e.exp.accept(this);
 		cfg.operand.T objOp = this.operand;
@@ -139,13 +163,22 @@ public class TranslateVisitor implements codegen.C.Visitor {
 			x.accept(this);
 			newArgs.add(this.operand);
 		}
-		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs));
-		this.operand = new cfg.operand.Var(dst);
+		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs, retType));
+		this.operand = new cfg.operand.Var(dst, retType, false, true);
 	}
 
 	@Override
 	public void visit(codegen.C.exp.Id e) {
-		this.operand = new cfg.operand.Var(e.id);
+		if (e.type instanceof ast.type.Boolean) {
+			this.type = new cfg.type.Boolean();
+		} else if (e.type instanceof ast.type.Int) {
+			this.type = new cfg.type.Int();
+		} else if (e.type instanceof ast.type.IntArray) {
+			this.type = new cfg.type.IntArray();
+		} else if (e.type instanceof ast.type.Class) {
+			this.type = new cfg.type.Class(((ast.type.Class)e.type).id);
+		}
+		this.operand = new cfg.operand.Var(e.id, this.type, e.isField, e.isLocal);
 	}
 
 	@Override
@@ -155,7 +188,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T array = this.operand;
 
 		emit(new cfg.stm.Length(dst, array));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Int(), false, true);
 	}
 
 	@Override
@@ -165,22 +198,24 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T left = this.operand;
 		e.right.accept(this);
 		emit(new cfg.stm.Lt(dst, left, this.operand));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
 	}
 
 	@Override
 	public void visit(codegen.C.exp.NewIntArray e) {
+		String dst = genVar(new cfg.type.IntArray());
 		e.exp.accept(this);
 		cfg.operand.T exp = this.operand;
-		emit(new cfg.stm.NewIntArray(e.name, exp));
-		this.operand = new cfg.operand.Var(e.name);
+		emit(new cfg.stm.NewIntArray(dst, exp));
+		this.operand = new cfg.operand.Var(dst, new cfg.type.IntArray(), false, true);
 	}
 
 	@Override
 	public void visit(codegen.C.exp.NewObject e) {
-		String dst = genVar(new cfg.type.Class(e.id));
+		cfg.type.Class classs = new cfg.type.Class(e.id);
+		String dst = genVar(classs);
 		emit(new cfg.stm.NewObject(dst, e.id));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, classs, false, true);
 	}
 
 	@Override
@@ -189,7 +224,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.exp.accept(this);
 		cfg.operand.T exp = this.operand;
 		emit(new cfg.stm.Not(dst, exp));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
 	}
 
 	@Override
@@ -204,12 +239,12 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T left = this.operand;
 		e.right.accept(this);
 		emit(new cfg.stm.Sub(dst, left, this.operand));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Int(), false, true);
 	}
 
 	@Override
 	public void visit(codegen.C.exp.This e) {
-		this.operand = new cfg.operand.Var("this");
+		this.operand = new cfg.operand.Var("this", null, false, false);
 	}
 
 	@Override
@@ -219,14 +254,14 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T left = this.operand;
 		e.right.accept(this);
 		emit(new cfg.stm.Times(dst, left, this.operand));
-		this.operand = new cfg.operand.Var(dst);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Int(), false, true);
 	}
 
 	// statements
 	@Override
 	public void visit(codegen.C.stm.Assign s) {
 		s.exp.accept(this);
-		emit(new cfg.stm.Move(s.id, this.operand));
+		emit(new cfg.stm.Move(s.id, this.operand, s.isField, s.isLocal, s.type));
 	}
 
 	@Override
@@ -235,12 +270,12 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T index = this.operand;
 		s.exp.accept(this);
 		cfg.operand.T exp = this.operand;
-		emit(new cfg.stm.AssignArray(s.id, index, exp));
+		emit(new cfg.stm.AssignArray(s.id, index, exp, s.isField, s.isLocal));
 	}
 
 	@Override
 	public void visit(codegen.C.stm.Block s) {
-		for (codegen.C.stm.T stm: s.stms) {
+		for (codegen.C.stm.T stm : s.stms) {
 			stm.accept(this);
 		}
 	}
@@ -316,7 +351,22 @@ public class TranslateVisitor implements codegen.C.Visitor {
 			}
 			newTuples.add(new cfg.Ftuple(t.classs, ret, args, t.id));
 		}
-		this.vtable = new cfg.vtable.Vtable(v.id, newTuples);
+		java.util.LinkedList<cfg.Tuple> tuples = new java.util.LinkedList<cfg.Tuple>();
+		for (codegen.C.Tuple tuple : ((codegen.C.classs.Class) v.classs).decs) {
+			if (tuple.type instanceof codegen.C.type.IntArray)
+				tuples.add(new cfg.Tuple(v.id, new cfg.type.IntArray(),
+						tuple.id));
+			else if (tuple.type instanceof codegen.C.type.Int)
+				tuples.add(new cfg.Tuple(v.id, new cfg.type.Int(), tuple.id));
+			else if (tuple.type instanceof codegen.C.type.Class)
+				tuples.add(new cfg.Tuple(v.id, new cfg.type.Class(
+						((codegen.C.type.Class) tuple.type).id), tuple.id));
+			else
+				throw new RuntimeException(
+						"unknow codegen.C.type.* when translate codegen.C to cfg");
+		}
+		cfg.classs.T classs = new cfg.classs.Class(v.id, tuples);
+		this.vtable = new cfg.vtable.Vtable(v.id, newTuples, classs);
 	}
 
 	// class

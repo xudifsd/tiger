@@ -1,5 +1,13 @@
 package cfg.optimizations;
 
+import cfg.stm.And;
+import cfg.stm.ArraySelect;
+import cfg.stm.AssignArray;
+import cfg.stm.Length;
+import cfg.stm.NewIntArray;
+import cfg.stm.Not;
+import cfg.type.Boolean;
+
 public class LivenessVisitor implements cfg.Visitor {
 	// gen, kill for one statement
 	private java.util.HashSet<String> oneStmGen;
@@ -181,6 +189,30 @@ public class LivenessVisitor implements cfg.Visitor {
 		return;
 	}
 
+	@Override
+	public void visit(And and) {
+	}
+
+	@Override
+	public void visit(ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(Length length) {
+	}
+
+	@Override
+	public void visit(NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(Not not) {
+	}
+
+	@Override
+	public void visit(AssignArray assignArray) {
+	}
+
 	// transfer
 	@Override
 	public void visit(cfg.transfer.If s) {
@@ -217,6 +249,10 @@ public class LivenessVisitor implements cfg.Visitor {
 	// dec
 	@Override
 	public void visit(cfg.dec.Dec d) {
+	}
+
+	@Override
+	public void visit(Boolean boolean1) {
 	}
 
 	// utility functions:
@@ -349,5 +385,4 @@ public class LivenessVisitor implements cfg.Visitor {
 		}
 		return;
 	}
-
 }

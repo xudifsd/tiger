@@ -18,5 +18,5 @@ int main (int argc, char **argv) {
   Tiger_heap_init();
 
   // enter Java code...
-  Tiger_main(1);
+  return Tiger_main(1);
 }

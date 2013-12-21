@@ -5,10 +5,16 @@ import cfg.Visitor;
 public class Move extends T {
 	public String dst;
 	public cfg.operand.T src;
+	public boolean isField;
+	public boolean isLocal;
+	public ast.type.T type;
 
-	public Move(String dst, cfg.operand.T src) {
+	public Move(String dst, cfg.operand.T src, boolean isField, boolean isLocal, ast.type.T type) {
 		this.dst = dst;
 		this.src = src;
+		this.isField = isField;
+		this.isLocal = isLocal;
+		this.type = type;
 	}
 
 	@Override

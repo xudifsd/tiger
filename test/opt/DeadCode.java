@@ -21,8 +21,8 @@ class Doit {
         else
             System.out.println(1);
 
-        while (false)
-            System.out.println(0);
+        //while (false && true)
+        //    System.out.println(0);
         return 0;
     }
 }
