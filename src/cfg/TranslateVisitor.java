@@ -1,17 +1,13 @@
 package cfg;
 
-import cfg.type.IntArray;
-
 // Traverse the C AST, and generate
 // a control-flow graph.
 public class TranslateVisitor implements codegen.C.Visitor {
-	private String classId;
 	private cfg.type.T type; // type after translation
 	private cfg.operand.T operand;
 	private cfg.dec.T dec;
 	// A dirty hack. Can hold stm, transfer, or label.
 	private java.util.ArrayList<Object> labelOrStmOrTransfer;
-	private util.Label entry;
 	private java.util.LinkedList<cfg.dec.T> newLocals;
 	private cfg.method.T method;
 	private cfg.classs.T classs;
@@ -20,7 +16,6 @@ public class TranslateVisitor implements codegen.C.Visitor {
 	public cfg.program.T program;
 
 	public TranslateVisitor() {
-		this.classId = null;
 		this.type = null;
 		this.dec = null;
 		this.labelOrStmOrTransfer = new java.util.ArrayList<Object>();
@@ -127,24 +122,6 @@ public class TranslateVisitor implements codegen.C.Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Call e) {
-		/*
-		this.say("(__gc_frame." + e.assign + "=");
-		e.exp.accept(this);
-		this.say(", ");
-		this.say("__gc_frame." + e.assign + "->vptr->" + e.id + "("
-				+ "__gc_frame." + e.assign);
-		int size = e.args.size();
-		if (size == 0) {
-			this.say("))");
-			return;
-		}
-		for (codegen.C.exp.T x : e.args) {
-			this.say(", ");
-			x.accept(this);
-		}
-		this.say("))");
-		*/
-
 		e.retType.accept(this);
 		cfg.type.T retType = this.type;
 		String dst = genVar(retType);
@@ -402,7 +379,6 @@ public class TranslateVisitor implements codegen.C.Visitor {
 
 		// a junk label
 		util.Label entry = new util.Label();
-		this.entry = entry;
 		emit(entry);
 
 		for (codegen.C.stm.T s : m.stms)

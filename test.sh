@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# test script for this repo, run with ./test.sh
+# if no diff message displayed it's correct
 for i in `find test -type f -regex ".*\.java"`
 do
     filename=`basename $i`

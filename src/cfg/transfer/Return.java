@@ -13,4 +13,9 @@ public class Return extends T {
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
+
+	@Override
+	public String toString() {
+		return "return " + operand;
+	}
 }

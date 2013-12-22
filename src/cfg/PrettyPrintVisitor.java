@@ -334,7 +334,14 @@ public class PrettyPrintVisitor implements Visitor {
 				this.sayln(" " + dec.id + ";");
 			}
 		}
-		// make formals also looks like local
+		/* *
+		 * Make formals also looks like local.
+		 * This is very ugly, but I'm too lazy to figure out how to
+		 * pass enough information to let PrettyPrint to know how to
+		 * generate right statement, because the framework is fixed,
+		 * I just don't want to change the framework, cause I've spent
+		 * 2 day in part A and part B in Lab5!!
+		 */
 		this.printSpaces();
 		this.sayln("//make formals also looks like local");
 		for (cfg.dec.T d : m.formals) {

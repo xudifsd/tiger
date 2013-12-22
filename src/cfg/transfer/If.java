@@ -17,4 +17,9 @@ public class If extends T {
 	public void accept(Visitor v) {
 		v.visit(this);
 	}
+
+	@Override
+	public String toString() {
+		return "if " + operand + " goto " + truee + " else goto " + falsee;
+	}
 }
