@@ -1,6 +1,9 @@
 package cfg.optimizations;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 
 import cfg.block.T;
 import cfg.stm.And;
@@ -313,11 +316,19 @@ public class LivenessVisitor implements cfg.Visitor {
 		public java.util.LinkedList<Node> in;
 		public java.util.LinkedList<Node> out;
 		public cfg.block.Block block;
+		/* *
+		 * This just like visited bit for traverse, but if we just use one bit,
+		 * we need to clear all bit after one pass, so we could use long to
+		 * represent the times we visited this node, if this field has value
+		 * equals the times we traverse, we skip it.
+		 */
+		public long visiedTimes;
 
 		public Node(cfg.block.Block block) {
 			this.block = block;
 			in = new java.util.LinkedList<Node>();
 			out = new java.util.LinkedList<Node>();
+			visiedTimes = 0;
 		}
 	}
 
@@ -330,16 +341,87 @@ public class LivenessVisitor implements cfg.Visitor {
 		for (cfg.block.T block : blocks) {
 			cfg.block.Block b = (cfg.block.Block) block;
 			dictionary.put(b.label, b);
+			blockLiveIn.put(b, new java.util.HashSet<String>());
+			blockLiveOut.put(b, new java.util.HashSet<String>());
 		}
 
 		// we don't need anotherDic, but recursive function need empty HashMap
 		java.util.HashMap<util.Label, Node> anotherDic;
 		anotherDic = new java.util.HashMap<util.Label, Node>();
+
 		// assume every blocks has at least one block
-		Node root = generateGraph((cfg.block.Block) blocks.get(0), leaf,
+		// we don't need to hold the root, because we have leaf to do this
+		generateGraph((cfg.block.Block) blocks.get(0), leaf,
 				dictionary, anotherDic);
 
+		anotherDic = null;//allow it to GC
+
 		// Now do the real work
+		boolean changed;
+		long times = 0;
+		java.util.LinkedList<Node> workList; // for BFS
+		workList = new java.util.LinkedList<Node>();
+		do {
+			changed = false;
+			times++;
+			workList.addAll(leaf);
+			while (workList.size() > 0) {
+				Node node = workList.removeFirst();
+				if (node.visiedTimes == times)
+					continue; // skip visited node
+
+				// visit this node
+				node.visiedTimes++;
+				java.util.HashSet<String> currentLiveIn;
+				currentLiveIn = blockLiveIn.get(node.block);
+
+				java.util.HashSet<String> currentLiveOut;
+				currentLiveOut = blockLiveOut.get(node.block);
+
+				java.util.HashSet<String> currentGen;
+				currentGen = blockGen.get(node.block);
+
+				java.util.HashSet<String> currentKill;
+				currentKill = blockGen.get(node.block);
+
+				// start equation
+				changed |= currentLiveIn.addAll(currentGen);
+
+				@SuppressWarnings("unchecked")
+				java.util.HashSet<String> out = (HashSet<String>) currentLiveOut
+						.clone();
+				out.removeAll(currentKill);
+
+				changed |= currentLiveIn.addAll(out);
+
+				// get currentLiveOut
+				for (Node outNode : node.out) {
+					cfg.block.Block outBlock = outNode.block;
+					changed |= currentLiveOut.addAll(blockLiveIn.get(outBlock));
+				}
+				for (Node inNode : node.in)
+					workList.addLast(inNode);
+			}
+		} while (changed);
+		if (control.Control.isTracing("liveness.step3")) {
+			Iterator<Entry<cfg.block.T, HashSet<String>>> it = blockLiveIn
+					.entrySet().iterator();
+			while (it.hasNext()) {
+				Entry<cfg.block.T, HashSet<String>> entry = it.next();
+				System.out.format("liveIn for block %s is %s\n",
+						((cfg.block.Block) entry.getKey()).label,
+						entry.getValue());
+			}
+			System.out.println();
+			it = blockLiveOut.entrySet().iterator();
+			while (it.hasNext()) {
+				Entry<cfg.block.T, HashSet<String>> entry = it.next();
+				System.out.format("liveOut for block %s is %s\n",
+						((cfg.block.Block) entry.getKey()).label,
+						entry.getValue());
+			}
+			System.out.println();
+		}
 	}
 
 	/* *
