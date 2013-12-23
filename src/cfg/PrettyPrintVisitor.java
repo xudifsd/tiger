@@ -6,9 +6,17 @@ import control.Control;
 public class PrettyPrintVisitor implements Visitor {
 	private int indentLevel;
 	private java.io.BufferedWriter writer;
+	private int times = 0; // for tracing
+	private boolean toDifferentFile; // for tracing
 
 	public PrettyPrintVisitor() {
 		this.indentLevel = 0;
+		toDifferentFile = false;
+	}
+
+	public PrettyPrintVisitor(boolean toStdout) {
+		this.indentLevel = 0;
+		this.toDifferentFile = toStdout;
 	}
 
 	private void indent() {
@@ -335,12 +343,11 @@ public class PrettyPrintVisitor implements Visitor {
 			}
 		}
 		/* *
-		 * Make formals also looks like local.
-		 * This is very ugly, but I'm too lazy to figure out how to
-		 * pass enough information to let PrettyPrint to know how to
-		 * generate right statement, because the framework is fixed,
-		 * I just don't want to change the framework, cause I've spent
-		 * 2 day in part A and part B in Lab5!!
+		 * Make formals also looks like local. This is very ugly, but I'm too
+		 * lazy to figure out how to pass enough information to let PrettyPrint
+		 * to know how to generate right statement, because the framework is
+		 * fixed, I just don't want to change the framework, cause I've spent 2
+		 * day in part A and part B in Lab5!!
 		 */
 		this.printSpaces();
 		this.sayln("//make formals also looks like local");
@@ -590,22 +597,26 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(cfg.program.Program p) {
 		// we'd like to output to a file, rather than the "stdout".
+		times++;
 		try {
 			String outputName = null;
-			if (Control.outputName != null)
-				outputName = Control.outputName;
-			else if (Control.fileName != null) {
-				int index = Control.fileName.indexOf("/");
-				String tmp = Control.fileName;
-				while (index != -1) {
-					tmp = tmp.substring(index + 1);
-					index = tmp.indexOf("/");
-				}
-				Control.outputName = outputName = "/tmp/" + tmp + ".c";
-			} else
-				Control.outputName = outputName = "/tmp/" + "a.c";
-
-			System.out.format("write output file to %s\n", Control.outputName);
+			if (toDifferentFile) {
+				outputName = "/tmp/" + times + ".c";
+			} else {
+				if (Control.outputName != null)
+					outputName = Control.outputName;
+				else if (Control.fileName != null) {
+					int index = Control.fileName.indexOf("/");
+					String tmp = Control.fileName;
+					while (index != -1) {
+						tmp = tmp.substring(index + 1);
+						index = tmp.indexOf("/");
+					}
+					Control.outputName = outputName = "/tmp/" + tmp + ".c";
+				} else
+					Control.outputName = outputName = "/tmp/" + "a.c";
+			}
+			System.out.format("write output file to %s\n", outputName);
 			this.writer = new java.io.BufferedWriter(
 					new java.io.OutputStreamWriter(
 							new java.io.FileOutputStream(outputName)));

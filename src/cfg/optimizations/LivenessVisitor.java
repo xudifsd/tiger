@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import cfg.block.T;
 import cfg.stm.And;
 import cfg.stm.ArraySelect;
 import cfg.stm.AssignArray;
@@ -36,15 +35,12 @@ public class LivenessVisitor implements cfg.Visitor {
 	private java.util.HashMap<cfg.block.T, java.util.HashSet<String>> blockLiveOut;
 
 	// liveIn, liveOut for statements
-	public java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveIn;
-	public java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveOut;
+	public static java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveIn;
+	public static java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveOut;
 
 	// liveIn, liveOut for transfer
-	public java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveIn;
-	public java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveOut;
-
-	private boolean blockInChanged;
-	private boolean blockOutChanged;
+	public static java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveIn;
+	public static java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveOut;
 
 	// As you will walk the tree for many times, so
 	// it will be useful to recored which is which:
@@ -70,11 +66,11 @@ public class LivenessVisitor implements cfg.Visitor {
 		this.blockLiveIn = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
 		this.blockLiveOut = new java.util.HashMap<cfg.block.T, java.util.HashSet<String>>();
 
-		this.stmLiveIn = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
-		this.stmLiveOut = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
+		stmLiveIn = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
+		stmLiveOut = new java.util.HashMap<cfg.stm.T, java.util.HashSet<String>>();
 
-		this.transferLiveIn = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
-		this.transferLiveOut = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
+		transferLiveIn = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
+		transferLiveOut = new java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>>();
 
 		this.kind = Liveness_Kind_t.None;
 	}
@@ -351,10 +347,10 @@ public class LivenessVisitor implements cfg.Visitor {
 
 		// assume every blocks has at least one block
 		// we don't need to hold the root, because we have leaf to do this
-		generateGraph((cfg.block.Block) blocks.get(0), leaf,
-				dictionary, anotherDic);
+		generateGraph((cfg.block.Block) blocks.get(0), leaf, dictionary,
+				anotherDic);
 
-		anotherDic = null;//allow it to GC
+		anotherDic = null;// allow it to GC
 
 		// Now do the real work
 		boolean changed;
@@ -475,6 +471,69 @@ public class LivenessVisitor implements cfg.Visitor {
 			return result;
 	}
 
+	@SuppressWarnings("unchecked")
+	private void calculateStmInOut(cfg.block.Block b) {
+		java.util.HashSet<String> currentBlockIn = blockLiveIn.get(b);
+		java.util.HashSet<String> currentBlockOut = blockLiveOut.get(b);
+		java.util.HashSet<String> belowOut = (HashSet<String>) currentBlockOut
+				.clone();
+		java.util.HashSet<String> belowIn = new java.util.HashSet<String>();
+
+		if (b.transfer instanceof cfg.transfer.If) {
+			cfg.transfer.If iff = (cfg.transfer.If) b.transfer;
+			java.util.HashSet<String> currentTransferGen = transferGen.get(iff);
+
+			transferLiveOut.put(iff, (HashSet<String>) belowOut.clone());
+			belowOut.addAll(currentTransferGen);
+			belowIn.addAll(currentTransferGen); // TODO what's the use of
+												// belowIn?
+			transferLiveIn.put(iff, (HashSet<String>) belowIn.clone());
+		} else if (b.transfer instanceof cfg.transfer.Return) {
+			cfg.transfer.Return returnn = (cfg.transfer.Return) b.transfer;
+			java.util.HashSet<String> currentTransferGen = transferGen
+					.get(returnn);
+
+			transferLiveOut.put(returnn, (HashSet<String>) belowOut.clone());
+			belowOut.addAll(currentTransferGen);
+			belowIn.addAll(currentTransferGen); // TODO what's the use of
+												// belowIn?
+			transferLiveIn.put(returnn, (HashSet<String>) belowIn.clone());
+		}
+
+		java.util.HashSet<String> currentTransferLiveIn = transferLiveIn
+				.get(b.transfer);
+		java.util.HashSet<String> currentTransferLiveOut = transferLiveOut
+				.get(b.transfer);
+		if (control.Control.isTracing("liveness.step4")
+				&& currentTransferLiveIn != null) {
+			System.out.format("transfer '%s' liveIn in block %s is %s\n",
+					b.transfer, b.label, currentTransferLiveIn);
+			System.out.format("transfer '%s' liveOut in block %s is %s\n",
+					b.transfer, b.label, currentTransferLiveOut);
+		}
+
+		// backwards visit
+		for (int i = b.stms.size() - 1; i >= 0; i--) {
+			cfg.stm.T stm = b.stms.get(i);
+			java.util.HashSet<String> currentStmGen = stmGen.get(stm);
+			java.util.HashSet<String> currentStmKill = stmKill.get(stm);
+
+			stmLiveOut.put(stm, (HashSet<String>) belowOut.clone());
+			belowOut.removeAll(currentStmKill);
+			belowOut.addAll(currentStmGen);
+			belowIn.addAll(currentStmGen); // TODO what's the use of belowIn?
+			stmLiveIn.put(stm, (HashSet<String>) belowIn.clone());
+
+			if (control.Control.isTracing("liveness.step4")) {
+				System.out.format("stm liveIn in block %s of stm '%s' is %s\n",
+						b.label, stm, stmLiveIn.get(stm));
+				System.out.format(
+						"stm liveOut in block %s of stm '%s' is %s\n\n",
+						b.label, stm, stmLiveOut.get(stm));
+			}
+		}
+	}
+
 	// block
 	@Override
 	public void visit(cfg.block.Block b) {
@@ -484,6 +543,9 @@ public class LivenessVisitor implements cfg.Visitor {
 			break;
 		case BlockGenKill:
 			calculateBlockGenKill(b);
+			break;
+		case StmInOut:
+			calculateStmInOut(b);
 			break;
 		default:
 			throw new RuntimeException("unknow Liveness_Kind_t: " + this.kind);
@@ -517,8 +579,9 @@ public class LivenessVisitor implements cfg.Visitor {
 
 		// Step 4: calculate the "liveIn" and "liveOut" sets for each
 		// statement and transfer
-		// Your code here:
-
+		this.kind = Liveness_Kind_t.StmInOut;
+		for (cfg.block.T block : m.blocks)
+			block.accept(this);
 	}
 
 	@Override
@@ -548,7 +611,9 @@ public class LivenessVisitor implements cfg.Visitor {
 
 		// Step 4: calculate the "liveIn" and "liveOut" sets for each
 		// statement and transfer
-		// Your code here:
+		this.kind = Liveness_Kind_t.StmInOut;
+		for (cfg.block.T block : m.blocks)
+			block.accept(this);
 	}
 
 	// vtables
