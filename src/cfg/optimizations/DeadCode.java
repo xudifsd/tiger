@@ -11,8 +11,20 @@ import cfg.type.Boolean;
 public class DeadCode implements cfg.Visitor {
 	public cfg.program.T program;
 
+	private java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveIn;
+	private java.util.HashMap<cfg.stm.T, java.util.HashSet<String>> stmLiveOut;
+
+	private java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveIn;
+	private java.util.HashMap<cfg.transfer.T, java.util.HashSet<String>> transferLiveOut;
+
+	private java.util.LinkedList<cfg.method.T> newMethods;
+	private cfg.mainMethod.T mainMethod;
+	private cfg.block.T newBlock;
+
 	public DeadCode() {
 		this.program = null;
+		this.newMethods = new java.util.LinkedList<cfg.method.T>();
+		this.mainMethod = null;
 	}
 
 	// /////////////////////////////////////////////////////
@@ -129,6 +141,12 @@ public class DeadCode implements cfg.Visitor {
 
 	@Override
 	public void visit(cfg.mainMethod.MainMethod m) {
+		java.util.LinkedList<cfg.block.T> newBlocks = new java.util.LinkedList<cfg.block.T>();
+		mainMethod = new cfg.mainMethod.MainMethod(m.locals, newBlocks);
+		for (cfg.block.T b : m.blocks) {
+			b.accept(this);
+			newBlocks.add(newBlock);
+		}
 	}
 
 	// vtables
@@ -144,6 +162,20 @@ public class DeadCode implements cfg.Visitor {
 	// program
 	@Override
 	public void visit(cfg.program.Program p) {
-		this.program = p;
+		stmLiveIn = LivenessVisitor.stmLiveIn;
+		stmLiveOut = LivenessVisitor.stmLiveOut;
+		transferLiveIn = LivenessVisitor.transferLiveIn;
+		transferLiveOut = LivenessVisitor.transferLiveOut;
+
+		if (stmLiveIn == null || stmLiveOut == null || transferLiveIn == null
+				|| transferLiveOut == null)
+			throw new RuntimeException(
+					"cdf.optimizations.DeadCode should be called after cdf.optimizations.LivenessVisitor");
+
+		p.mainMethod.accept(this);
+		for (cfg.method.T m : p.methods)
+			m.accept(this);
+		this.program = new cfg.program.Program(p.classes, p.vtables,
+				newMethods, mainMethod);
 	}
 }
