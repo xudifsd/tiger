@@ -63,8 +63,8 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(cfg.operand.Var operand) {
 		if (operand.isField)
 			this.say("this->");
-		else if (operand.type instanceof cfg.type.Class
-				|| operand.type instanceof cfg.type.IntArray) {
+		else if ((operand.type instanceof cfg.type.Class || operand.type instanceof cfg.type.IntArray)
+				&& operand.isLocal) {
 			this.say("__gc_frame.");
 		}
 		this.say(operand.id);
@@ -87,7 +87,7 @@ public class PrettyPrintVisitor implements Visitor {
 			this.say("__gc_frame.");
 		this.say(s.dst + " = ");
 
-		if (!s.obj.equals("this") && !s.isField)
+		if (!s.obj.equals("this") && s.isLocal)
 			this.say("__gc_frame.");
 		else if (s.isField)
 			this.say("this->");
@@ -95,7 +95,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say(s.obj);
 		this.say("->vptr->" + s.f + "(");
 
-		if (!s.obj.equals("this") && !s.isField)
+		if (!s.obj.equals("this") && s.isLocal)
 			this.say("__gc_frame.");
 		else if (s.isField)
 			this.say("this->");
@@ -121,7 +121,8 @@ public class PrettyPrintVisitor implements Visitor {
 	public void visit(cfg.stm.Move s) {
 		if (s.isField)
 			this.say("this->");
-		else if ((s.type instanceof ast.type.IntArray || s.type instanceof ast.type.Class))
+		else if ((s.type instanceof ast.type.IntArray || s.type instanceof ast.type.Class)
+				&& s.isLocal)
 			this.say("__gc_frame.");
 		this.say(s.dst + " = ");
 		s.src.accept(this);
@@ -342,24 +343,6 @@ public class PrettyPrintVisitor implements Visitor {
 				this.sayln(" " + dec.id + ";");
 			}
 		}
-		/* *
-		 * Make formals also looks like local. This is very ugly, but I'm too
-		 * lazy to figure out how to pass enough information to let PrettyPrint
-		 * to know how to generate right statement, because the framework is
-		 * fixed, I just don't want to change the framework, cause I've spent 2
-		 * day in part A and part B in Lab5!!
-		 */
-		this.printSpaces();
-		this.sayln("//make formals also looks like local");
-		for (cfg.dec.T d : m.formals) {
-			cfg.dec.Dec dec = (cfg.dec.Dec) d;
-			if (dec.type instanceof cfg.type.IntArray
-					|| dec.type instanceof cfg.type.Class) {
-				this.printSpaces();
-				dec.type.accept(this);
-				this.sayln(" " + dec.id + ";");
-			}
-		}
 		this.unIndent();
 		this.printSpaces();
 		this.sayln("} __gc_frame;");
@@ -386,27 +369,8 @@ public class PrettyPrintVisitor implements Visitor {
 					|| dec.type instanceof cfg.type.IntArray)
 				__locals_gc_number++;
 		}
-		for (cfg.dec.T d : m.formals) {
-			cfg.dec.Dec dec = (cfg.dec.Dec) d;
-			if (dec.type instanceof cfg.type.IntArray
-					|| dec.type instanceof cfg.type.Class) {
-				__locals_gc_number++;
-			}
-		}
 		this.say(new Integer(__locals_gc_number).toString());
 		this.sayln(";");
-
-		// make formals also looks like local
-		this.printSpaces();
-		this.sayln("//make formals also looks like local");
-		for (cfg.dec.T d : m.formals) {
-			cfg.dec.Dec dec = (cfg.dec.Dec) d;
-			if (dec.type instanceof cfg.type.IntArray
-					|| dec.type instanceof cfg.type.Class) {
-				this.printSpaces();
-				this.sayln("__gc_frame." + dec.id + " = " + dec.id + ";");
-			}
-		}
 
 		this.printSpaces();
 		this.sayln("gc_frame_prev = (struct gc_frame_header *)&__gc_frame;");

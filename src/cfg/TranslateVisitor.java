@@ -106,7 +106,8 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.right.accept(this);
 		cfg.operand.T right = this.operand;
 		emit(new cfg.stm.And(dst, left, right));
-		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false,
+				true);
 	}
 
 	@Override
@@ -140,7 +141,9 @@ public class TranslateVisitor implements codegen.C.Visitor {
 			x.accept(this);
 			newArgs.add(this.operand);
 		}
-		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs, retType, ((cfg.operand.Var)objOp).isField));
+		emit(new cfg.stm.InvokeVirtual(dst, obj, e.id, newArgs, retType,
+				((cfg.operand.Var) objOp).isField,
+				((cfg.operand.Var) objOp).isLocal));
 		this.operand = new cfg.operand.Var(dst, retType, false, true);
 	}
 
@@ -153,9 +156,10 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		} else if (e.type instanceof ast.type.IntArray) {
 			this.type = new cfg.type.IntArray();
 		} else if (e.type instanceof ast.type.Class) {
-			this.type = new cfg.type.Class(((ast.type.Class)e.type).id);
+			this.type = new cfg.type.Class(((ast.type.Class) e.type).id);
 		}
-		this.operand = new cfg.operand.Var(e.id, this.type, e.isField, e.isLocal);
+		this.operand = new cfg.operand.Var(e.id, this.type, e.isField,
+				e.isLocal);
 	}
 
 	@Override
@@ -175,7 +179,8 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		cfg.operand.T left = this.operand;
 		e.right.accept(this);
 		emit(new cfg.stm.Lt(dst, left, this.operand));
-		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false,
+				true);
 	}
 
 	@Override
@@ -184,7 +189,8 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.exp.accept(this);
 		cfg.operand.T exp = this.operand;
 		emit(new cfg.stm.NewIntArray(dst, exp));
-		this.operand = new cfg.operand.Var(dst, new cfg.type.IntArray(), false, true);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.IntArray(), false,
+				true);
 	}
 
 	@Override
@@ -201,7 +207,8 @@ public class TranslateVisitor implements codegen.C.Visitor {
 		e.exp.accept(this);
 		cfg.operand.T exp = this.operand;
 		emit(new cfg.stm.Not(dst, exp));
-		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false, true);
+		this.operand = new cfg.operand.Var(dst, new cfg.type.Boolean(), false,
+				true);
 	}
 
 	@Override
