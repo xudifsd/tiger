@@ -16,6 +16,8 @@
 
 void write_log(const char *fmt, ...) {
     if (gcLog) {
+        if (!strncmp(fmt, "debug:", 6))
+            return;
         va_list args;
         va_start(args, fmt);
         vfprintf(gc_log_output, fmt, args);
@@ -535,7 +537,7 @@ void prepare_free_memory(unsigned long size) {
                             old_gen_heap.available_size,
                             size);
                 }
-                write_log("grow old_gen_heap from %lu to %lu", old_gen_heap.available_size, old_gen_heap.available_size + to_alloc);
+                write_log("info: grow old_gen_heap from %lu to %lu", old_gen_heap.available_size, old_gen_heap.available_size + to_alloc);
                 old_gen_heap.available_size += to_alloc;
                 return;
             }

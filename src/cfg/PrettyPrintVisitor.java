@@ -127,6 +127,13 @@ public class PrettyPrintVisitor implements Visitor {
 		this.say(s.dst + " = ");
 		s.src.accept(this);
 		this.sayln(";");
+		if ((s.type instanceof ast.type.IntArray || s.type instanceof ast.type.Class)
+				&& s.isField) {
+			this.printSpaces();
+			this.say("write_barrier(this->" + s.dst + ", ");
+			s.src.accept(this);
+			this.sayln(");");
+		}
 	}
 
 	@Override
