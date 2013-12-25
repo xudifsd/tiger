@@ -174,19 +174,10 @@ public class PrettyPrintVisitor implements Visitor {
 		if (s.isField
 				&& (s.type instanceof ast.type.IntArray ||
 						s.type instanceof ast.type.Class)) {
-			/* *
-			 * We generate a lot of code here, because we want to use
-			 * write_barrier() which required by generational GC. A lot of code
-			 * here is used to prevent side affect that may introduced by
-			 * s.exp.accept(this), because this.some = new Class() is also a
-			 * Assign, we don't want to repeat this side affect twice
-			 */
-			this.say("__gc_frame." + s.tmpid + " = ");
+			this.sayln("this->" + s.id + " = ");
 			s.exp.accept(this);
 			this.sayln(";");
 
-			this.printSpaces();
-			this.sayln("this->" + s.id + " = __gc_frame." + s.tmpid + ";");
 			this.printSpaces();
 			this.sayln("write_barrier(this, " + "this->" + s.id + ");");
 		} else {
@@ -574,11 +565,11 @@ public class PrettyPrintVisitor implements Visitor {
 					tmp = tmp.substring(index + 1);
 					index = tmp.indexOf("/");
 				}
-				Control.outputName = outputName = "/tmp/" + tmp + ".c";
+				outputName = "/tmp/" + tmp + "_c.c";
 			} else
-				Control.outputName = outputName = "/tmp/" + "a.c";
+				outputName = "/tmp/" + "a.c";
 
-			System.out.format("write output file to %s\n", Control.outputName);
+			System.out.format("write output file to %s\n", outputName);
 			this.writer = new java.io.BufferedWriter(
 					new java.io.OutputStreamWriter(
 							new java.io.FileOutputStream(outputName)));

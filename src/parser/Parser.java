@@ -158,7 +158,7 @@ public class Parser {
 					LinkedList<ast.exp.T> expList = parseExpList();
 					eatToken(Kind.TOKEN_RPAREN);
 					atomExp = new ast.exp.Call(atomExp, id, expList,
-							lexer.lineno);
+							lexer.lineno, null);
 				}
 			} else {
 				// must be TOKEN_LBRACK

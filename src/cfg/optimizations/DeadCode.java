@@ -58,7 +58,7 @@ public class DeadCode implements cfg.Visitor {
 
 	@Override
 	public void visit(cfg.stm.Move s) {
-		if (stmLiveOut.get(s).contains(s.dst))
+		if (stmLiveOut.get(s).contains(s.dst) /*|| s.isField*/)
 			newBlock.stms.add(s);
 	}
 

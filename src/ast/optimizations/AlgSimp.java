@@ -1,6 +1,5 @@
 package ast.optimizations;
 
-
 // Algebraic simplification optimizations on an AST.
 
 public class AlgSimp implements ast.Visitor {
@@ -89,7 +88,10 @@ public class AlgSimp implements ast.Visitor {
 			arg.accept(this);
 			another.add(this.exp);
 		}
-		this.exp = new ast.exp.Call(e.exp, e.id, another, e.lineno);
+		ast.exp.Call result = new ast.exp.Call(e.exp, e.id, another, e.lineno,
+				e.type);
+		result.rt = e.rt;
+		this.exp = result;
 	}
 
 	@Override
@@ -144,8 +146,11 @@ public class AlgSimp implements ast.Visitor {
 	public void visit(ast.exp.NewIntArray e) {
 		isLiteralNum = false;
 		e.exp.accept(this);
-		this.exp = new ast.exp.NewIntArray(
-				new ast.exp.Num(literalNum, e.lineno), e.lineno);
+		if (isLiteralNum)
+			this.exp = new ast.exp.NewIntArray(new ast.exp.Num(literalNum,
+					e.lineno), e.lineno);
+		else
+			this.exp = e;
 	}
 
 	@Override
@@ -242,19 +247,27 @@ public class AlgSimp implements ast.Visitor {
 	@Override
 	public void visit(ast.stm.Assign s) {
 		s.exp.accept(this);
-		this.stm = new ast.stm.Assign(s.id, this.exp, s.lineno);
+		ast.stm.Assign result = new ast.stm.Assign(s.id, this.exp, s.lineno);
+		result.isField = s.isField;
+		result.isLocal = s.isLocal;
+		result.type = s.type;
+		this.stm = result;
 	}
 
 	@Override
 	public void visit(ast.stm.AssignArray s) {
 		s.index.accept(this);
-		this.stm = new ast.stm.AssignArray(s.id, this.exp, s.exp, s.lineno);
+		ast.stm.AssignArray result = new ast.stm.AssignArray(s.id, this.exp,
+				s.exp, s.lineno);
+		result.isField = s.isField;
+		result.isLocal = s.isLocal;
+		this.stm = result;
 	}
 
 	@Override
 	public void visit(ast.stm.Block s) {
 		java.util.LinkedList<ast.stm.T> stms = new java.util.LinkedList<ast.stm.T>();
-		for (ast.stm.T stm : stms) {
+		for (ast.stm.T stm : s.stms) {
 			stm.accept(this);
 			stms.add(this.stm);
 		}

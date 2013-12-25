@@ -14,11 +14,11 @@ public class Call extends T {
 	public ast.type.T rt;
 	public int lineno;
 
-	public Call(T exp, String id, java.util.LinkedList<T> args,int lineno) {
+	public Call(T exp, String id, java.util.LinkedList<T> args,int lineno, String type) {
 		this.exp = exp;
 		this.id = id;
 		this.args = args;
-		this.type = null;
+		this.type = type;
 		this.lineno = lineno;
 		this.at = null;
 		this.rt = null;

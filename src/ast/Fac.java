@@ -20,7 +20,7 @@ public class Fac {
 	static ast.mainClass.MainClass factorial = new ast.mainClass.MainClass(
 			"Factorial", "a", new ast.stm.Print(new ast.exp.Call(
 					new ast.exp.NewObject("Fac", 2), "ComputeFac",
-					new util.Flist<ast.exp.T>().addAll(new ast.exp.Num(10, 3)), 3), 2), 1);
+					new util.Flist<ast.exp.T>().addAll(new ast.exp.Num(10, 3)), 3, "Fac"), 2), 1);
 
 	// // class "Fac"
 	static ast.classs.Class fac = new ast.classs.Class(
@@ -58,7 +58,7 @@ public class Fac {
 																	new ast.exp.Id(
 																			"num", 2),
 																	new ast.exp.Num(
-																			1, 2), 3)), 3), 3), 4), 4)),
+																			1, 2), 3)), 3, "this"), 3), 4), 4)),
 					new ast.exp.Id("num_aux", 5), 3)), 1);
 
 	// program
@@ -73,7 +73,7 @@ public class Fac {
 	static ast.mainClass.MainClass sum = new ast.mainClass.MainClass("Sum",
 			"a", new ast.stm.Print(new ast.exp.Call(new ast.exp.NewObject(
 					"Doit", 2), "doit",
-					new util.Flist<ast.exp.T>().addAll(new ast.exp.Num(101, 4)), 3), 2), 1);
+					new util.Flist<ast.exp.T>().addAll(new ast.exp.Num(101, 4)), 3, "Doit"), 2), 1);
 
 	// // class "Doit"
 	static ast.classs.Class doit = new ast.classs.Class("Doit", null,

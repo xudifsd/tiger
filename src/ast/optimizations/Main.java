@@ -48,7 +48,7 @@ public class Main {
 		if (control.Control.skipPass("ast.DeadClass")) {
 		} else {
 			deadClassPass2.doit();
-			ast = dceVisitor.program;
+			ast = dceVisitor2.program;
 		}
 
 		program = ast;

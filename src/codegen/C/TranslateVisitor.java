@@ -74,7 +74,7 @@ public class TranslateVisitor implements ast.Visitor {
 		e.exp.accept(this);
 		String newid = this.genId();
 		this.tmpVars.add(new codegen.C.dec.Dec(
-					new codegen.C.type.Class(e.type), newid));
+				new codegen.C.type.Class(e.type), newid));
 		codegen.C.exp.T exp = this.exp;
 		java.util.LinkedList<codegen.C.exp.T> args = new java.util.LinkedList<codegen.C.exp.T>();
 		for (ast.exp.T x : e.args) {
@@ -168,20 +168,8 @@ public class TranslateVisitor implements ast.Visitor {
 	@Override
 	public void visit(ast.stm.Assign s) {
 		s.exp.accept(this);
-		String tmpid = null;
-		if (s.isField
-				&& (s.type instanceof ast.type.IntArray || s.type instanceof ast.type.Class)) {
-			// for generational GC
-			tmpid = this.genId();
-			if (s.type instanceof ast.type.Class)
-				this.tmpVars.add(new codegen.C.dec.Dec(
-						new codegen.C.type.Class(s.type.toString()), tmpid));
-			else
-				this.tmpVars.add(new codegen.C.dec.Dec(
-						new codegen.C.type.IntArray(), tmpid));
-		}
 		this.stm = new codegen.C.stm.Assign(s.id, this.exp, s.isField,
-				s.isLocal, s.type, tmpid);
+				s.isLocal, s.type);
 	}
 
 	@Override

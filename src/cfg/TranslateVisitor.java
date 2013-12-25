@@ -123,6 +123,7 @@ public class TranslateVisitor implements codegen.C.Visitor {
 
 	@Override
 	public void visit(codegen.C.exp.Call e) {
+		// we ignore e.assign
 		e.retType.accept(this);
 		cfg.type.T retType = this.type;
 		String dst = genVar(retType);

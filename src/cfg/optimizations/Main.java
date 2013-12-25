@@ -11,9 +11,7 @@ public class Main {
 		if (control.Control.skipPass("cfg.Linvess")) {
 		} else {
 			livenessPass.doit();
-			// Export necessary data structures from the
-			// liveness analysis.
-			// Your code here:
+			// we export it to later pass via public static field
 		}
 
 		// dead-code elimination
@@ -79,7 +77,5 @@ public class Main {
 		}
 
 		program = cfg;
-
-		return;
 	}
 }
