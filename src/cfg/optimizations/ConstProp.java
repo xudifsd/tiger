@@ -49,7 +49,6 @@ public class ConstProp implements cfg.Visitor {
 	public void visit(cfg.operand.Var operand) {
 		if (inspect) {
 			isConst = false;
-			dst = operand.id;
 		} else {
 			int times = 0;
 			boolean isConst = false;

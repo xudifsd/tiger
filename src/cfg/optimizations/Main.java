@@ -18,7 +18,9 @@ public class Main {
 		DeadCode deadCode = new DeadCode();
 		control.CompilerPass deadCodePass = new control.CompilerPass(
 				"Dead-code elimination", cfg, deadCode);
-		if (control.Control.skipPass("cfg.deadCode")) {
+		if (control.Control.skipPass("cfg.Linvess")
+				|| control.Control.skipPass("cfg.deadCode")) {
+			// deadCode needs livness
 		} else {
 			deadCodePass.doit();
 			cfg = deadCode.program;
@@ -39,17 +41,32 @@ public class Main {
 		ConstProp constProp = new ConstProp();
 		control.CompilerPass constPropPass = new control.CompilerPass(
 				"Constant propagation", cfg, constProp);
-		if (control.Control.skipPass("cfg.constProp")) {
+		if (control.Control.skipPass("cfg.reaching")
+				|| control.Control.skipPass("cfg.constProp")) {
+			// constProp needs reach
 		} else {
 			constPropPass.doit();
 			cfg = constProp.program;
+		}
+
+		// do reaching definition again for copyProp
+		reachingDef = new ReachingDefinition();
+		reachingDefPass = new control.CompilerPass(
+				"Reaching definition for copyProp", cfg, reachingDef);
+		if (control.Control.skipPass("cfg.reaching")) {
+		} else {
+			reachingDefPass.doit();
+			// Export necessary data structures
+			// we export it to later pass via public static field
 		}
 
 		// copy propagation
 		CopyProp copyProp = new CopyProp();
 		control.CompilerPass copyPropPass = new control.CompilerPass(
 				"Copy propagation", cfg, copyProp);
-		if (control.Control.skipPass("cfg.copyProp")) {
+		if (control.Control.skipPass("cfg.reaching")
+				|| control.Control.skipPass("cfg.copyProp")) {
+			// constProp needs reach
 		} else {
 			copyPropPass.doit();
 			cfg = copyProp.program;
