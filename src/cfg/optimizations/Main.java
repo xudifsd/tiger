@@ -5,26 +5,26 @@ public class Main {
 
 	public void accept(cfg.program.T cfg) {
 		// liveness analysis
-		LivenessVisitor liveness = new LivenessVisitor();
-		control.CompilerPass livenessPass = new control.CompilerPass(
-				"Liveness analysis", cfg, liveness);
-		if (control.Control.skipPass("cfg.Linvess")) {
-		} else {
-			livenessPass.doit();
-			// we export it to later pass via public static field
-		}
-
-		// dead-code elimination
-		DeadCode deadCode = new DeadCode();
-		control.CompilerPass deadCodePass = new control.CompilerPass(
-				"Dead-code elimination", cfg, deadCode);
-		if (control.Control.skipPass("cfg.Linvess")
-				|| control.Control.skipPass("cfg.deadCode")) {
-			// deadCode needs livness
-		} else {
-			deadCodePass.doit();
-			cfg = deadCode.program;
-		}
+//		LivenessVisitor liveness = new LivenessVisitor();
+//		control.CompilerPass livenessPass = new control.CompilerPass(
+//				"Liveness analysis", cfg, liveness);
+//		if (control.Control.skipPass("cfg.Linvess")) {
+//		} else {
+//			livenessPass.doit();
+//			// we export it to later pass via public static field
+//		}
+//
+//		// dead-code elimination
+//		DeadCode deadCode = new DeadCode();
+//		control.CompilerPass deadCodePass = new control.CompilerPass(
+//				"Dead-code elimination", cfg, deadCode);
+//		if (control.Control.skipPass("cfg.Linvess")
+//				|| control.Control.skipPass("cfg.deadCode")) {
+//			// deadCode needs livness
+//		} else {
+//			deadCodePass.doit();
+//			cfg = deadCode.program;
+//		}
 
 		// reaching definition
 		ReachingDefinition reachingDef = new ReachingDefinition();

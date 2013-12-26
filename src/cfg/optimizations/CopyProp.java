@@ -127,8 +127,12 @@ public class CopyProp implements cfg.Visitor {
 	@Override
 	public void visit(cfg.stm.Move s) {
 		if (inspect) {
-			this.dst = s.dst;
-			s.src.accept(this);
+			if (s.isField) {
+				return;
+			} else {
+				this.dst = s.dst;
+				s.src.accept(this);
+			}
 		} else {
 			currentStm = s;
 			s.src.accept(this);

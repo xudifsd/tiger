@@ -87,42 +87,42 @@ public class Tiger {
 		optAstPass.doitName("optimize");
 		theAst = optAstPasses.program;
 
-        // Compile this program to C.
-        codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
-        control.CompilerPass genCCodePass = new control.CompilerPass(
-                "Translation to C code", theAst, transC);
-        genCCodePass.doit();
-        codegen.C.program.T cAst = transC.program;
+		// Compile this program to C.
+		codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
+		control.CompilerPass genCCodePass = new control.CompilerPass(
+				"Translation to C code", theAst, transC);
+		genCCodePass.doit();
+		codegen.C.program.T cAst = transC.program;
 
-        if (control.Control.dumpC) {
-            codegen.C.PrettyPrintVisitor ppC = new codegen.C.PrettyPrintVisitor();
-            control.CompilerPass ppCCodePass = new control.CompilerPass(
-                    "C code printing", cAst, ppC);
-            ppCCodePass.doit();
-        }
+		if (control.Control.dumpC) {
+			codegen.C.PrettyPrintVisitor ppC = new codegen.C.PrettyPrintVisitor();
+			control.CompilerPass ppCCodePass = new control.CompilerPass(
+					"C code printing", cAst, ppC);
+			ppCCodePass.doit();
+		}
 
-        // translation to control-flow graph
-        cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
-        control.CompilerPass genCfgCodePass = new control.CompilerPass(
-                "Control-flow graph generation", cAst, transCfg);
-        genCfgCodePass.doit();
-        cfg.program.T cfgAst = transCfg.program;
+		// translation to control-flow graph
+		cfg.TranslateVisitor transCfg = new cfg.TranslateVisitor();
+		control.CompilerPass genCfgCodePass = new control.CompilerPass(
+				"Control-flow graph generation", cAst, transCfg);
+		genCfgCodePass.doit();
+		cfg.program.T cfgAst = transCfg.program;
 
-        // visualize the control-flow graph, if necessary
-        if (control.Control.visualize != Control.Visualize_Kind_t.None) {
-            cfg.VisualVisitor toDot = new cfg.VisualVisitor();
-            control.CompilerPass genDotPass = new control.CompilerPass(
-                    "Draw control-flow graph", cfgAst, toDot);
-            genDotPass.doit();
-        }
+		// visualize the control-flow graph, if necessary
+		if (control.Control.visualize != Control.Visualize_Kind_t.None) {
+			cfg.VisualVisitor toDot = new cfg.VisualVisitor();
+			control.CompilerPass genDotPass = new control.CompilerPass(
+					"Draw control-flow graph", cfgAst, toDot);
+			genDotPass.doit();
+		}
 
-        // optimizations on the control-flow graph
-        cfg.optimizations.Main cfgOpts = new cfg.optimizations.Main();
-        control.CompilerPass cfgOptPass = new control.CompilerPass(
-                "Control-flow graph optimizations", cfgOpts, cfgAst);
-        cfgOptPass.doit();
+		// optimizations on the control-flow graph
+		cfg.optimizations.Main cfgOpts = new cfg.optimizations.Main();
+		control.CompilerPass cfgOptPass = new control.CompilerPass(
+				"Control-flow graph optimizations", cfgOpts, cfgAst);
+		cfgOptPass.doit();
 
-        //cfgAst = cfgOpts.program;
+		cfgAst = cfgOpts.program;
 
 		// code generation
 		switch (control.Control.codegen) {
@@ -139,10 +139,10 @@ public class Tiger {
 			ppBytecodePass.doit();
 			break;
 		case C:
-            cfg.PrettyPrintVisitor ppCfg = new cfg.PrettyPrintVisitor();
-            control.CompilerPass ppCfgCodePass = new control.CompilerPass(
-                    "C code printing", cfgAst, ppCfg);
-            ppCfgCodePass.doit();
+			cfg.PrettyPrintVisitor ppCfg = new cfg.PrettyPrintVisitor();
+			control.CompilerPass ppCfgCodePass = new control.CompilerPass(
+					"C code printing", cfgAst, ppCfg);
+			ppCfgCodePass.doit();
 			break;
 		case Dalvik:
 			codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();

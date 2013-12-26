@@ -31,6 +31,9 @@ public class ReachingDefinition implements cfg.Visitor {
 	private java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>> blockIn;
 	public static java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>> blockOut;
 
+	public static java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>> stmIn;
+	public static java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>> stmOut;
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void safeAddAll(java.util.HashSet from, java.util.HashSet to) {
 		if (to == null)
@@ -50,6 +53,9 @@ public class ReachingDefinition implements cfg.Visitor {
 
 		blockIn = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
 		blockOut = new java.util.HashMap<cfg.block.T, java.util.HashSet<cfg.stm.T>>();
+
+		stmIn = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
+		stmOut = new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
 	}
 
 	// /////////////////////////////////////////////////////
@@ -85,7 +91,8 @@ public class ReachingDefinition implements cfg.Visitor {
 	public void visit(cfg.stm.InvokeVirtual s) {
 		if (step == 0) {
 			if (s.isField)
-				this.oneMethodDef.put(s.dst, new java.util.HashSet<cfg.stm.T>());
+				this.oneMethodDef
+						.put(s.dst, new java.util.HashSet<cfg.stm.T>());
 			this.oneMethodDef.get(s.dst).add(s);
 		} else if (step == 1) {
 			java.util.HashSet<cfg.stm.T> gen = new java.util.HashSet<cfg.stm.T>();
@@ -117,7 +124,8 @@ public class ReachingDefinition implements cfg.Visitor {
 	public void visit(cfg.stm.Move s) {
 		if (step == 0) {
 			if (s.isField)
-				this.oneMethodDef.put(s.dst, new java.util.HashSet<cfg.stm.T>());
+				this.oneMethodDef
+						.put(s.dst, new java.util.HashSet<cfg.stm.T>());
 			this.oneMethodDef.get(s.dst).add(s);
 		} else if (step == 1) {
 			java.util.HashSet<cfg.stm.T> gen = new java.util.HashSet<cfg.stm.T>();
@@ -472,12 +480,24 @@ public class ReachingDefinition implements cfg.Visitor {
 		}
 	}
 
-	// private void calculateStmInOut(cfg.block.Block b) {
-	// // new java.util.HashMap<cfg.stm.T, java.util.HashSet<cfg.stm.T>>();
-	// for (cfg.stm.T stm : b.stms)
-	// stm.accept(this);
-	// b.transfer.accept(this);
-	// }
+	@SuppressWarnings("unchecked")
+	private void calculateStmInOut(cfg.block.Block b) {
+		java.util.HashSet<cfg.stm.T> aboveIn;
+		// java.util.HashSet<cfg.stm.T> aboveOut;
+		aboveIn = new java.util.HashSet<cfg.stm.T>();
+		// aboveOut = new java.util.HashSet<cfg.stm.T>();
+
+		aboveIn.addAll(this.blockIn.get(b));
+		for (cfg.stm.T stm : b.stms) {
+			java.util.HashSet<cfg.stm.T> curIn;
+			curIn = (HashSet<T>) aboveIn.clone();
+			this.stmIn.put(stm, curIn);
+			// curIn.removeAll(c);
+			java.util.HashSet<cfg.stm.T> curGen = this.stmGen.get(stm);
+			java.util.HashSet<cfg.stm.T> curKill = this.stmKill.get(stm);
+		}
+		// b.transfer.accept(this);
+	}
 
 	// block
 	@Override
@@ -492,11 +512,7 @@ public class ReachingDefinition implements cfg.Visitor {
 			calculateBlockGenKill(b);
 			break;
 		case 4:
-			// calculateStmInOut(b);
-			if (control.Control.isTracing("reach.step4")) {
-				System.out
-						.println("stm's in and out is the same as block it lives in");
-			}
+			calculateStmInOut(b);
 			break;
 		default:
 			throw new RuntimeException("Unknow step in ReachingDefinition");
