@@ -32,7 +32,7 @@ public class Main {
 		} else {
 			reachingDefPass.doit();
 			// Export necessary data structures
-			// Your code here:
+			// we export it to later pass via public static field
 		}
 
 		// constant propagation

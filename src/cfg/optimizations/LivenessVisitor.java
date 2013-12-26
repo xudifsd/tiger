@@ -473,7 +473,6 @@ public class LivenessVisitor implements cfg.Visitor {
 
 	@SuppressWarnings("unchecked")
 	private void calculateStmInOut(cfg.block.Block b) {
-		java.util.HashSet<String> currentBlockIn = blockLiveIn.get(b);
 		java.util.HashSet<String> currentBlockOut = blockLiveOut.get(b);
 		java.util.HashSet<String> belowOut = (HashSet<String>) currentBlockOut
 				.clone();
