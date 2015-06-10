@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import util.Todo;
-
 import lexer.Token.Kind;
 
 public class Lexer {
@@ -160,14 +159,7 @@ public class Lexer {
 				return new Token(Kind.TOKEN_WHILE, this.lineno);
 			break;
 		case '/':// comment, FIXME we can't handle comment like /*sss*/
-			if (this.fstream.read() != '/')
-				bug();
-			int c1 = 0;
-			while (c1 != -1 && c1 != '\n') {
-				this.fstream.mark(1);
-				c1 = this.fstream.read();
-			}
-			this.fstream.reset();//for update lineno
+			dealComments(c);
 			return nextTokenInternal();
 		default:
 			if (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))//in [_a-zA-Z]
@@ -185,6 +177,46 @@ public class Lexer {
 			}
 		}
 		return new Token(Kind.TOKEN_ID, this.lineno, buildId(c));
+	}
+	
+	/**
+	 * 
+	 * @param c must be '/'
+	 * @throws IOException
+	 */
+	private void dealComments(int c) throws IOException
+	{
+		//ex must be '/' or '*', otherwise, error.bug().
+		int ex = this.fstream.read();
+		if (ex == '/')
+		{
+			while (ex != '\n'&& ex!= -1)
+			{
+				this.fstream.mark(1);
+				ex = this.fstream.read();
+			}
+			if (ex == -1)
+			{
+				this.fstream.reset();
+				return;
+			}
+			else
+				lineno++;
+		}
+		else if (ex == '*')
+		{// '/*'must find a '*/'to mach, otherwise error. 
+			ex = this.fstream.read();
+			while ((c != '*' || ex != '/') && (ex != -1))
+			{
+				c = ex;
+				ex = this.fstream.read();
+			}
+			if (ex == -1)
+				util.Error.bug();
+		}
+		else
+			util.Error.bug();
+		// the else is well down
 	}
 
 	private boolean expectFollowing(String expectedString) throws IOException {
@@ -222,16 +254,27 @@ public class Lexer {
 
 	private String buildNum(int s) throws IOException {
 		StringBuilder sb = new StringBuilder();
-		sb.append((char)s);
-		for (;;) {
+		sb.append((char) s);
+
+		while (true)
+		{
 			this.fstream.mark(1);
 			int c = this.fstream.read();
-			if (c < '0' || c > '9') {//not in [0-9]
-				this.fstream.reset();
-				break;
+			if (c >= '0' &&c <= '9')
+			{
+				sb.append((char) c);
+				continue;
 			}
-			sb.append((char)c);
+
+			// 999aaa is not a num.
+			if ((c == '_') || (c >= 'a' && c <= 'z')
+					|| (c >= 'A' && c <= 'Z'))
+				util.Error.bug();
+
+			break;
 		}
+
+		this.fstream.reset();
 		return sb.toString();
 	}
 
