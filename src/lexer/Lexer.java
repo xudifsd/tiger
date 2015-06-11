@@ -158,7 +158,7 @@ public class Lexer {
 			if (expectFollowing("hile"))
 				return new Token(Kind.TOKEN_WHILE, this.lineno);
 			break;
-		case '/':// comment, FIXME we can't handle comment like /*sss*/
+		case '/':
 			dealComments(c);
 			return nextTokenInternal();
 		default:
@@ -188,26 +188,22 @@ public class Lexer {
 	{
 		//ex must be '/' or '*', otherwise, error.bug().
 		int ex = this.fstream.read();
-		if (ex == '/')
-		{
-			while (ex != '\n'&& ex!= -1)
-			{
+		if (ex == '/') {
+			while (ex != '\n' && ex != -1) {
 				this.fstream.mark(1);
 				ex = this.fstream.read();
 			}
-			if (ex == -1)
-			{
+			if (ex == -1) {
 				this.fstream.reset();
 				return;
 			}
 			else
 				lineno++;
 		}
-		else if (ex == '*')
-		{// '/*'must find a '*/'to mach, otherwise error. 
+		else if (ex == '*') {
+			// '/*'must find a '*/'to mach, otherwise error. 
 			ex = this.fstream.read();
-			while ((c != '*' || ex != '/') && (ex != -1))
-			{
+			while ((c != '*' || ex != '/') && (ex != -1)) {
 				c = ex;
 				ex = this.fstream.read();
 			}
@@ -216,7 +212,6 @@ public class Lexer {
 		}
 		else
 			util.Error.bug();
-		// the else is well down
 	}
 
 	private boolean expectFollowing(String expectedString) throws IOException {
@@ -256,19 +251,15 @@ public class Lexer {
 		StringBuilder sb = new StringBuilder();
 		sb.append((char) s);
 
-		while (true)
-		{
+		while (true) {
 			this.fstream.mark(1);
 			int c = this.fstream.read();
-			if (c >= '0' &&c <= '9')
-			{
+			if (c >= '0' && c <= '9') {
 				sb.append((char) c);
 				continue;
 			}
-
 			// 999aaa is not a num.
-			if ((c == '_') || (c >= 'a' && c <= 'z')
-					|| (c >= 'A' && c <= 'Z'))
+			if ((c == '_') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 				util.Error.bug();
 
 			break;
